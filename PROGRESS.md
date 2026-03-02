@@ -6,7 +6,7 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 *Objectif : Prouver vos compétences en ingénierie cloud avec Terraform et Kubernetes.*
 
 ### Semaines 1-2 : Fondations & bootstrap
-- [ ] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
+- [x] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
 - [ ] Créer manuellement un bucket de stockage (GCS/S3) pour le backend Terraform
 - [ ] Configurer le `backend.tf` pour utiliser le bucket distant
 - [ ] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
