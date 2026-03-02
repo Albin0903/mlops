@@ -7,7 +7,6 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 
 ### Semaines 1-2 : Fondations & Bootstrap
 - [ ] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
-- [ ] Activer les API nécessaires (Compute, Container, IAM, Network)
 - [ ] Créer manuellement un bucket de stockage (GCS/S3) pour le Backend Terraform
 - [ ] Configurer le `backend.tf` pour utiliser le bucket distant
 - [ ] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
