@@ -1,15 +1,19 @@
-# Consignes de Style du Projet (Style Guide)
+# Standards d'ingénierie et de style
 
-En tant qu'assistant de programmation sur ce projet, vous devez respecter les règles suivantes pour garantir un code sobre et professionnel :
+Ce document définit les règles strictes de développement pour garantir la sobriété et le professionnalisme du projet.
 
-## Interdictions strictes
-- **Aucun emoji** : Ne jamais utiliser d'emojis dans les fichiers Markdown (.md), les commentaires de code, les messages de commit ou les logs.
-- **Ton sobre** : Adopter un ton technique et factuel, sans fioritures.
-- **Pas de "trop IA"** : Éviter les phrases génériques comme "Voici votre code mis à jour" ou "Je serai ravi de vous aider". Allez directement à l'essentiel technique.
+## Règles de rédaction et de communication
+- Interdiction d'utiliser des emojis dans le code, les commentaires, les messages de commit, les logs ou la documentation.
+- Interdiction d'utiliser des majuscules en milieu de phrase ou pour mettre en avant des mots (sauf noms propres techniques comme Python, Docker, Terraform).
+- Interdiction d'adopter un ton trop formel, scolaire ou verbeux typique des ia. L'écriture doit être directe, technique et factuelle.
+- Interdiction d'ajouter des phrases de politesse génériques ("voici le code", "je suis ravi de vous aider"). Allez à l'essentiel technique.
 
-## Documentation & Commentaires
-- Les commentaires doivent être en anglais ou français (selon la demande), mais toujours sans symboles graphiques.
-- Les fichiers Markdown doivent suivre une structure académique ou professionnelle standard.
+## Sécurité et développement
+- Interdiction de commiter des secrets, des clés api ou des fichiers de configuration locale (`.env`, `.tfstate`).
+- Obligation de valider chaque commit avec les hooks `pre-commit` localement.
+- Obligation d'utiliser `pathlib` pour la gestion des chemins afin d'assurer la compatibilité entre windows et linux.
+- Les messages de log doivent être structurés (ex: `info: processing started for {filename}`) et sans décoration graphique.
 
-## Logging
-- Les messages de log doivent être clairs et structurés (ex: `INFO: Processing started for file {filename}`), sans décorations.
+## Infrastructure et code
+- Le code python doit suivre les standards `ruff` et être testé via `pytest`.
+- La configuration terraform doit être modulaire et utiliser un backend distant pour la gestion de l'état.
