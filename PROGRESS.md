@@ -21,10 +21,10 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 
 ### Semaines 5-6 : Kubernetes & connectivité (Masterclass)
 - [x] Démarrer minikube et configurer le contexte kubectl
-- [ ] Déployer un Ingress Controller (NGINX) via Helm
-- [ ] Créer et déployer les manifests `k8s/hello-world.yaml` (Deployment, Service ClusterIP, Ingress)
-- [ ] Vérifier l'accès à l'application via l'URL publique de l'Ingress
-- [ ] Finaliser le script Python `scripts/manage_infra.py` pour automatiser `apply` et `destroy`
+- [x] Déployer un Ingress Controller (NGINX) via Helm
+- [x] Créer et déployer les manifests `k8s/hello-world.yaml` (Deployment, Service ClusterIP, Ingress)
+- [x] Créer un `Dockerfile` professionnel (Multi-stage, Non-root, .dockerignore)
+- [x] Finaliser le script Python `scripts/manage_infra.py` pour automatiser `apply` et `destroy`
 
 ---
 
