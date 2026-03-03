@@ -1,7 +1,12 @@
 repos:
--   repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
-    hooks:
-    -   id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: .*/tests
+- repo: https://github.com/yelp/detect-secrets
+  rev: v1.5.0
+  hooks:
+    - id: detect-secrets
+      args: ['--baseline', '.secrets.baseline']
+      exclude: .*/tests
+
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.86.0
+  hooks:
+    - id: terraform_validate

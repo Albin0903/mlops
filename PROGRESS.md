@@ -7,19 +7,20 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 
 ### Semaines 1-2 : Fondations & bootstrap
 - [x] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
-- [ ] Créer manuellement un bucket de stockage (GCS/S3) pour le backend Terraform
-- [ ] Configurer le `backend.tf` pour utiliser le bucket distant
-- [ ] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
+- [x] Créer manuellement un bucket de stockage (GCS/S3) pour le backend Terraform
+- [x] Configurer le `backend.tf` pour utiliser le bucket distant
+- [x] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
 
 ### Semaines 3-4 : Réseau & cluster K8s (IaC)
-- [ ] Module VPC : Définir le réseau, les sous-réseaux privés et publics
-- [ ] Module IAM : Créer un Service Account avec privilèges restreints pour le cluster
-- [ ] Module Cluster : Provisionnement GKE/EKS (instances e2-medium ou t3.medium)
-- [ ] Exécuter `terraform apply` et vérifier la création via la console Cloud
-- [ ] Configurer `outputs.tf` pour extraire l'IP et les certificats du cluster
+- [x] Module VPC : Définir le réseau, les sous-réseaux privés et publics
+- [x] Module IAM : Créer un Service Account avec privilèges restreints pour le cluster
+- [x] Module Cluster : Provisionnement EKS (code terraform écrit et validé)
+- [x] Exécuter `terraform apply` et vérifier la création via la console Cloud
+- [x] Configurer `outputs.tf` pour extraire l'IP et les certificats du cluster
+- [x] Migration vers minikube (local) pour éviter les coûts EKS (~70$/mois)
 
 ### Semaines 5-6 : Kubernetes & connectivité (Masterclass)
-- [ ] Installer kubectl et configurer le contexte de connexion au cluster
+- [x] Démarrer minikube et configurer le contexte kubectl
 - [ ] Déployer un Ingress Controller (NGINX) via Helm
 - [ ] Créer et déployer les manifests `k8s/hello-world.yaml` (Deployment, Service ClusterIP, Ingress)
 - [ ] Vérifier l'accès à l'application via l'URL publique de l'Ingress

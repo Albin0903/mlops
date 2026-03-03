@@ -1,0 +1,193 @@
+[0m[1mmodule.vpc.aws_route_table_association.public: Refreshing state... [id=rtbassoc-0a7e33847f89a1a32][0m
+[0m[1mmodule.vpc.aws_subnet.public: Refreshing state... [id=subnet-0a7f752adc9189eb3][0m
+[0m[1mmodule.vpc.aws_vpc.main: Refreshing state... [id=vpc-0a59b58b7bdce2eaf][0m
+[0m[1mmodule.iam.aws_iam_role.eks_cluster: Refreshing state... [id=mlops-eks-cluster-role][0m
+[0m[1mmodule.iam.aws_iam_role_policy_attachment.eks_cluster_policy: Refreshing state... [id=mlops-eks-cluster-role-20260303122007591800000001][0m
+[0m[1mmodule.vpc.aws_internet_gateway.main: Refreshing state... [id=igw-01b02181921955dcd][0m
+[0m[1mmodule.vpc.aws_route_table.public: Refreshing state... [id=rtb-05eb54f07030c4bc1][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+  [31m-[0m destroy[0m
+
+Terraform will perform the following actions:
+
+[1m  # module.cluster.aws_eks_cluster.main[0m will be created
+[0m  [32m+[0m[0m resource "aws_eks_cluster" "main" {
+      [32m+[0m[0m arn                           = (known after apply)
+      [32m+[0m[0m bootstrap_self_managed_addons = true
+      [32m+[0m[0m certificate_authority         = (known after apply)
+      [32m+[0m[0m cluster_id                    = (known after apply)
+      [32m+[0m[0m created_at                    = (known after apply)
+      [32m+[0m[0m endpoint                      = (known after apply)
+      [32m+[0m[0m id                            = (known after apply)
+      [32m+[0m[0m identity                      = (known after apply)
+      [32m+[0m[0m name                          = "mlops-cluster"
+      [32m+[0m[0m platform_version              = (known after apply)
+      [32m+[0m[0m role_arn                      = "arn:aws:iam::690081480267:role/mlops-eks-cluster-role"
+      [32m+[0m[0m status                        = (known after apply)
+      [32m+[0m[0m tags_all                      = (known after apply)
+      [32m+[0m[0m version                       = (known after apply)
+
+      [32m+[0m[0m access_config (known after apply)
+
+      [32m+[0m[0m kubernetes_network_config (known after apply)
+
+      [32m+[0m[0m upgrade_policy (known after apply)
+
+      [32m+[0m[0m vpc_config {
+          [32m+[0m[0m cluster_security_group_id = (known after apply)
+          [32m+[0m[0m endpoint_private_access   = false
+          [32m+[0m[0m endpoint_public_access    = true
+          [32m+[0m[0m public_access_cidrs       = (known after apply)
+          [32m+[0m[0m subnet_ids                = (known after apply)
+          [32m+[0m[0m vpc_id                    = (known after apply)
+        }
+    }
+
+[1m  # module.cluster.aws_eks_node_group.main[0m will be created
+[0m  [32m+[0m[0m resource "aws_eks_node_group" "main" {
+      [32m+[0m[0m ami_type               = (known after apply)
+      [32m+[0m[0m arn                    = (known after apply)
+      [32m+[0m[0m capacity_type          = (known after apply)
+      [32m+[0m[0m cluster_name           = "mlops-cluster"
+      [32m+[0m[0m disk_size              = (known after apply)
+      [32m+[0m[0m id                     = (known after apply)
+      [32m+[0m[0m instance_types         = [
+          [32m+[0m[0m "t3.medium",
+        ]
+      [32m+[0m[0m node_group_name        = "mlops-node-group"
+      [32m+[0m[0m node_group_name_prefix = (known after apply)
+      [32m+[0m[0m node_role_arn          = "arn:aws:iam::690081480267:role/mlops-eks-cluster-role"
+      [32m+[0m[0m release_version        = (known after apply)
+      [32m+[0m[0m resources              = (known after apply)
+      [32m+[0m[0m status                 = (known after apply)
+      [32m+[0m[0m subnet_ids             = (known after apply)
+      [32m+[0m[0m tags_all               = (known after apply)
+      [32m+[0m[0m version                = (known after apply)
+
+      [32m+[0m[0m node_repair_config (known after apply)
+
+      [32m+[0m[0m scaling_config {
+          [32m+[0m[0m desired_size = 1
+          [32m+[0m[0m max_size     = 2
+          [32m+[0m[0m min_size     = 1
+        }
+
+      [32m+[0m[0m update_config (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.public[0m will be [1m[31mdestroyed[0m
+  # (because aws_route_table_association.public is not in configuration)
+[0m  [31m-[0m[0m resource "aws_route_table_association" "public" {
+      [31m-[0m[0m id             = "rtbassoc-0a7e33847f89a1a32" [90m-> null[0m[0m
+      [31m-[0m[0m route_table_id = "rtb-05eb54f07030c4bc1" [90m-> null[0m[0m
+      [31m-[0m[0m subnet_id      = "subnet-0a7f752adc9189eb3" [90m-> null[0m[0m
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # module.vpc.aws_route_table_association.public_1[0m will be created
+[0m  [32m+[0m[0m resource "aws_route_table_association" "public_1" {
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m route_table_id = "rtb-05eb54f07030c4bc1"
+      [32m+[0m[0m subnet_id      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_route_table_association.public_2[0m will be created
+[0m  [32m+[0m[0m resource "aws_route_table_association" "public_2" {
+      [32m+[0m[0m id             = (known after apply)
+      [32m+[0m[0m route_table_id = "rtb-05eb54f07030c4bc1"
+      [32m+[0m[0m subnet_id      = (known after apply)
+    }
+
+[1m  # module.vpc.aws_subnet.public[0m will be [1m[31mdestroyed[0m
+  # (because aws_subnet.public is not in configuration)
+[0m  [31m-[0m[0m resource "aws_subnet" "public" {
+      [31m-[0m[0m arn                                            = "arn:aws:ec2:eu-north-1:690081480267:subnet/subnet-0a7f752adc9189eb3" [90m-> null[0m[0m
+      [31m-[0m[0m assign_ipv6_address_on_creation                = false [90m-> null[0m[0m
+      [31m-[0m[0m availability_zone                              = "eu-north-1a" [90m-> null[0m[0m
+      [31m-[0m[0m availability_zone_id                           = "eun1-az1" [90m-> null[0m[0m
+      [31m-[0m[0m cidr_block                                     = "10.0.1.0/24" [90m-> null[0m[0m
+      [31m-[0m[0m enable_dns64                                   = false [90m-> null[0m[0m
+      [31m-[0m[0m enable_lni_at_device_index                     = 0 [90m-> null[0m[0m
+      [31m-[0m[0m enable_resource_name_dns_a_record_on_launch    = false [90m-> null[0m[0m
+      [31m-[0m[0m enable_resource_name_dns_aaaa_record_on_launch = false [90m-> null[0m[0m
+      [31m-[0m[0m id                                             = "subnet-0a7f752adc9189eb3" [90m-> null[0m[0m
+      [31m-[0m[0m ipv6_native                                    = false [90m-> null[0m[0m
+      [31m-[0m[0m map_customer_owned_ip_on_launch                = false [90m-> null[0m[0m
+      [31m-[0m[0m map_public_ip_on_launch                        = true [90m-> null[0m[0m
+      [31m-[0m[0m owner_id                                       = "690081480267" [90m-> null[0m[0m
+      [31m-[0m[0m private_dns_hostname_type_on_launch            = "ip-name" [90m-> null[0m[0m
+      [31m-[0m[0m tags                                           = {
+          [31m-[0m[0m "Name"                   = "mlops-public-subnet"
+          [31m-[0m[0m "kubernetes.io/role/elb" = "1"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m tags_all                                       = {
+          [31m-[0m[0m "Name"                   = "mlops-public-subnet"
+          [31m-[0m[0m "kubernetes.io/role/elb" = "1"
+        } [90m-> null[0m[0m
+      [31m-[0m[0m vpc_id                                         = "vpc-0a59b58b7bdce2eaf" [90m-> null[0m[0m
+        [90m# (4 unchanged attributes hidden)[0m[0m
+    }
+
+[1m  # module.vpc.aws_subnet.public_1[0m will be created
+[0m  [32m+[0m[0m resource "aws_subnet" "public_1" {
+      [32m+[0m[0m arn                                            = (known after apply)
+      [32m+[0m[0m assign_ipv6_address_on_creation                = false
+      [32m+[0m[0m availability_zone                              = "eu-north-1a"
+      [32m+[0m[0m availability_zone_id                           = (known after apply)
+      [32m+[0m[0m cidr_block                                     = "10.0.1.0/24"
+      [32m+[0m[0m enable_dns64                                   = false
+      [32m+[0m[0m enable_resource_name_dns_a_record_on_launch    = false
+      [32m+[0m[0m enable_resource_name_dns_aaaa_record_on_launch = false
+      [32m+[0m[0m id                                             = (known after apply)
+      [32m+[0m[0m ipv6_cidr_block_association_id                 = (known after apply)
+      [32m+[0m[0m ipv6_native                                    = false
+      [32m+[0m[0m map_public_ip_on_launch                        = true
+      [32m+[0m[0m owner_id                                       = (known after apply)
+      [32m+[0m[0m private_dns_hostname_type_on_launch            = (known after apply)
+      [32m+[0m[0m tags                                           = {
+          [32m+[0m[0m "Name"                   = "mlops-public-1"
+          [32m+[0m[0m "kubernetes.io/role/elb" = "1"
+        }
+      [32m+[0m[0m tags_all                                       = {
+          [32m+[0m[0m "Name"                   = "mlops-public-1"
+          [32m+[0m[0m "kubernetes.io/role/elb" = "1"
+        }
+      [32m+[0m[0m vpc_id                                         = "vpc-0a59b58b7bdce2eaf"
+    }
+
+[1m  # module.vpc.aws_subnet.public_2[0m will be created
+[0m  [32m+[0m[0m resource "aws_subnet" "public_2" {
+      [32m+[0m[0m arn                                            = (known after apply)
+      [32m+[0m[0m assign_ipv6_address_on_creation                = false
+      [32m+[0m[0m availability_zone                              = "eu-north-1b"
+      [32m+[0m[0m availability_zone_id                           = (known after apply)
+      [32m+[0m[0m cidr_block                                     = "10.0.2.0/24"
+      [32m+[0m[0m enable_dns64                                   = false
+      [32m+[0m[0m enable_resource_name_dns_a_record_on_launch    = false
+      [32m+[0m[0m enable_resource_name_dns_aaaa_record_on_launch = false
+      [32m+[0m[0m id                                             = (known after apply)
+      [32m+[0m[0m ipv6_cidr_block_association_id                 = (known after apply)
+      [32m+[0m[0m ipv6_native                                    = false
+      [32m+[0m[0m map_public_ip_on_launch                        = true
+      [32m+[0m[0m owner_id                                       = (known after apply)
+      [32m+[0m[0m private_dns_hostname_type_on_launch            = (known after apply)
+      [32m+[0m[0m tags                                           = {
+          [32m+[0m[0m "Name"                   = "mlops-public-2"
+          [32m+[0m[0m "kubernetes.io/role/elb" = "1"
+        }
+      [32m+[0m[0m tags_all                                       = {
+          [32m+[0m[0m "Name"                   = "mlops-public-2"
+          [32m+[0m[0m "kubernetes.io/role/elb" = "1"
+        }
+      [32m+[0m[0m vpc_id                                         = "vpc-0a59b58b7bdce2eaf"
+    }
+
+[1mPlan:[0m [0m6 to add, 0 to change, 2 to destroy.
+[90m
+ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ[0m
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.

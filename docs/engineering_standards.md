@@ -16,4 +16,4 @@ Ce document définit les règles strictes de développement pour garantir la sob
 
 ## Infrastructure et code
 - Le code python doit suivre les standards `ruff` et être testé via `pytest`.
-- La configuration terraform doit être modulaire et utiliser un backend distant pour la gestion de l'état.
+- La configuration terraform doit être modulaire et utiliser un backend distant pour la gestion de l'état.- Interdiction d'ajouter des espaces pour aligner les opérateurs = (le code doit être compact).
