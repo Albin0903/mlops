@@ -8,9 +8,3 @@ class AnalysisRequest(BaseModel):
     language: str = Field("python", description="le langage de programmation concerne")
     mode: str = Field("doc", pattern="^(doc|question)$", description="le mode d'utilisation : documentation ou reponse technique")
     question: str | None = Field(None, description="la question specifique si le mode est 'question'")
-
-class AnalysisResponse(BaseModel):
-    """schema de reponse apres analyse llm"""
-    suggestions: list[str] = Field(..., description="liste des ameliorations suggerees")
-    estimated_cost: float = Field(..., ge=0, description="cout estime en dollars")
-    token_usage: dict = Field(..., description="details de consommation des tokens")
