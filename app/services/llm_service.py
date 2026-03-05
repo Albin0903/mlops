@@ -1,5 +1,5 @@
-import os
 from groq import AsyncGroq
+from loguru import logger
 from app.core.config import settings
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -66,7 +66,7 @@ class LLMService:
                     yield chunk.choices[0].delta.content
 
         except Exception as e:
-            print(f"erreur critique service llm : {e}")
+            logger.error(f"erreur critique service llm : {e}")
             yield f"\n\n[erreur] : {e}"
 
 llm_service = LLMService()
