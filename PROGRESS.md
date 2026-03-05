@@ -1,17 +1,19 @@
 # Feuille de route et suivi de projet
 
-Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps/LLMOps de classe production.
+Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de classe production.
 
-## Sprint 1 : Infrastructure cloud & IaC (Semaines 1-6)
-*Objectif : Prouver vos compétences en ingénierie cloud avec Terraform et Kubernetes.*
+---
 
-### Semaines 1-2 : Fondations & bootstrap
+## Sprint 1 : Infrastructure Cloud & IaC
+*Objectif : Prouver ses compétences en ingénierie cloud avec Terraform et Kubernetes.*
+
+### Fondations & bootstrap
 - [x] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
 - [x] Créer manuellement un bucket de stockage (GCS/S3) pour le backend Terraform
 - [x] Configurer le `backend.tf` pour utiliser le bucket distant
 - [x] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
 
-### Semaines 3-4 : Réseau & cluster K8s (IaC)
+### Réseau & cluster K8s (IaC)
 - [x] Module VPC : Définir le réseau, les sous-réseaux privés et publics
 - [x] Module IAM : Créer un Service Account avec privilèges restreints pour le cluster
 - [x] Module Cluster : Provisionnement EKS (code terraform écrit et validé)
@@ -19,7 +21,7 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 - [x] Configurer `outputs.tf` pour extraire l'IP et les certificats du cluster
 - [x] Migration vers minikube (local) pour éviter les coûts EKS (~70$/mois)
 
-### Semaines 5-6 : Kubernetes & connectivité (Masterclass)
+### Kubernetes & connectivité (Masterclass)
 - [x] Démarrer minikube et configurer le contexte kubectl
 - [x] Déployer un Ingress Controller (NGINX) via Helm
 - [x] Créer et déployer les manifests `k8s/hello-world.yaml` (Deployment, Service ClusterIP, Ingress)
@@ -28,66 +30,146 @@ Ce document suit le plan de 24 semaines pour construire une infrastructure MLOps
 
 ---
 
-## Sprint 2 : Application LLM & DevSecOps (Semaines 7-12)
+## Sprint 2 : Application LLM & DevSecOps
 *Objectif : Développer un code Python robuste, optimisé et sécurisé.*
 
-### Semaines 7-8 : FastAPI & intégration LLM
-- [ ] Initialiser le projet FastAPI avec des gestionnaires `async def`
-- [ ] Intégrer l'API Mistral ou OpenAI
-- [ ] Implémenter des tentatives (Retries) avec backoff exponentiel (Résilience)
-- [ ] Ajouter des modèles Pydantic stricts pour la validation entrée/sortie
+### FastAPI & intégration LLM
+- [x] Initialiser le projet FastAPI avec des gestionnaires `async def`
+- [x] Intégrer l'API Groq (Llama 3.3 70B) en streaming asynchrone
+- [x] Implémenter des tentatives (Retries) avec backoff exponentiel (Résilience)
+- [x] Ajouter des modèles Pydantic stricts pour la validation entrée/sortie
+- [x] Optimiser les system prompts pour réduire la consommation de tokens
+- [x] Créer un script de test streaming asynchrone (`scripts/test_streaming.py`)
 
-### Semaine 9 : Conteneurisation avancée
-- [ ] Écrire un Dockerfile multi-étapes (taille optimisée)
-- [ ] Implémenter la sécurité avec un utilisateur non-root dans Docker
-- [ ] Configurer le fichier `.dockerignore`
+### Conteneurisation avancée
+- [x] Écrire un Dockerfile multi-étapes (taille optimisée)
+- [x] Implémenter la sécurité avec un utilisateur non-root dans Docker
+- [x] Configurer le fichier `.dockerignore`
 
-### Semaines 10-12 : Observabilité LLM (Langfuse)
-- [ ] Intégrer le SDK Langfuse
-- [ ] Logger les prompts, les réponses et la latence
+### Observabilité LLM (Langfuse)
+- [ ] Intégrer le SDK Langfuse dans `app/services/llm_service.py`
+- [ ] Logger les prompts, les réponses et la latence de chaque appel LLM
 - [ ] Suivre l'utilisation des tokens (entrée/sortie) et calcul du coût par requête
+- [ ] Créer des traces nommées pour chaque endpoint (`/analyze/doc`, `/analyze/question`)
+- [ ] Ajouter un screenshot du dashboard Langfuse dans le README
+
+### Tests automatisés (Pytest)
+- [ ] Configurer `pytest` et `pytest-cov` dans `requirements-dev.txt`
+- [ ] Écrire les tests des endpoints FastAPI avec `httpx.AsyncClient` (`tests/test_api.py`)
+- [ ] Écrire les tests du service LLM avec mocking de l'API Groq (`tests/test_llm_service.py`)
+- [ ] Écrire les tests de validation des schémas Pydantic (`tests/test_schemas.py`)
+- [ ] Écrire les tests du health check et de la configuration (`tests/test_health.py`)
+- [ ] Atteindre un taux de couverture ≥ 70%
+- [ ] Ajouter un badge de couverture dans le README
 
 ---
 
-## Sprint 3 : CI/CD moderne & GitOps (Semaines 13-18)
+## Sprint 3 : CI/CD moderne & GitOps
 *Objectif : Passer des déploiements "push" vers le "GitOps" (pull).*
 
-### Semaines 13-15 : Intégration continue (CI)
-- [ ] Configurer le workflow GitHub Actions
-- [ ] Étape : Linting (Ruff)
-- [ ] Étape : Tests unitaires (Pytest)
-- [ ] Étape : Scan de sécurité (Trivy)
-- [ ] Étape : Build & push vers un registre (GHCR/DockerHub)
+### Intégration continue (CI) — GitHub Actions
+- [ ] Configurer le workflow `.github/workflows/ci.yml`
+  - [ ] Étape : Linting avec Ruff (vérification de style et erreurs)
+  - [ ] Étape : Tests unitaires avec Pytest + couverture
+  - [ ] Étape : Scan de sécurité de l'image Docker avec Trivy
+  - [ ] Étape : Analyse de qualité de code avec SonarQube / SonarCloud
+  - [ ] Étape : Build & push de l'image vers GHCR (GitHub Container Registry)
+- [ ] Ajouter des badges CI (build status, coverage, security) dans le README
 
-### Semaines 16-18 : Déploiement continu (CD) avec ArgoCD
-- [ ] Installer ArgoCD sur le cluster Kubernetes
-- [ ] Créer un dépôt "GitOps" pour les manifestes
+### Workflow Git professionnel
+- [ ] Créer la branche `develop` depuis `main`
+- [ ] Adopter un workflow Git Flow simplifié (`main` → `develop` → `feature/*`)
+- [ ] Créer des Pull Requests pour chaque feature (historique visible par les recruteurs)
+- [ ] Configurer des règles de protection sur `main` (review requise, CI verte)
+
+### Déploiement continu (CD) avec ArgoCD
+- [ ] Installer ArgoCD sur le cluster Kubernetes (minikube)
+- [ ] Créer un dépôt "GitOps" séparé pour les manifestes K8s
 - [ ] Connecter ArgoCD au dépôt pour la synchronisation automatique
-- [ ] Implémenter une logique de déploiement Blue/Green ou Canary (Optionnel)
+- [ ] Implémenter une logique de déploiement Blue/Green ou Canary
+- [ ] Documenter le flux GitOps avec un schéma (draw.io)
 
 ---
 
-## Sprint 4 : Monitoring & valorisation (Semaines 19-24)
-*Objectif : Excellence opérationnelle et documentation professionnelle.*
+## Sprint 4 : Monitoring & Observabilité
+*Objectif : Excellence opérationnelle avec une stack de monitoring complète.*
 
-### Semaines 19-21 : Monitoring de l'infrastructure
-- [ ] Déployer Prometheus via Helm Charts
-- [ ] Déployer Grafana
-- [ ] Créer des tableaux de bord : Utilisation CPU/RAM, taux de 4xx/5xx, requêtes/sec
+### Monitoring de l'infrastructure (Prometheus & Grafana)
+- [ ] Créer des Helm Charts personnalisés pour le déploiement de l'API (`helm/mlops-api/`)
+- [ ] Déployer Prometheus via Helm Charts sur minikube
+- [ ] Déployer Grafana via Helm Charts sur minikube
+- [ ] Instrumenter FastAPI avec `prometheus-fastapi-instrumentator` (métriques HTTP)
+- [ ] Créer des métriques custom : latence LLM, tokens consommés, coût par requête
+- [ ] Créer des tableaux de bord Grafana :
+  - [ ] Dashboard infra : CPU/RAM, requêtes/sec, taux de 4xx/5xx, latence P50/P95/P99
+  - [ ] Dashboard LLM : tokens in/out, coût cumulé, latence par modèle
+- [ ] Configurer des alertes Prometheus (ex : latence P95 > 5s, taux d'erreur > 5%)
+- [ ] Ajouter un screenshot des dashboards dans le README
 
-### Semaines 22-24 : Portfolio & system design
+### MLflow — Tracking d'expériences
+- [ ] Déployer un serveur MLflow (local ou conteneurisé)
+- [ ] Intégrer MLflow dans le service LLM pour tracker les expériences
+  - [ ] Logger les paramètres : modèle, temperature, max_tokens, system prompt
+  - [ ] Logger les métriques : latence, tokens utilisés, coût
+  - [ ] Logger les artefacts : exemples de prompts/réponses
+- [ ] Créer des expériences pour comparer différentes configurations de prompts
+- [ ] Documenter l'utilisation de MLflow dans le README
+
+### Tests de charge (Locust)
+- [ ] Créer un fichier `locustfile.py` pour simuler du trafic sur l'API
+- [ ] Définir des scénarios de test :
+  - [ ] Scénario 1 : Montée en charge progressive (10 → 100 utilisateurs)
+  - [ ] Scénario 2 : Pic de trafic (burst de 200 requêtes)
+  - [ ] Scénario 3 : Endurance (charge constante pendant 30 min)
+- [ ] Identifier les goulots d'étranglement (latence, erreurs, saturation)
+- [ ] Documenter les résultats avec graphiques (Locust dashboard) dans le README
+- [ ] Ajuster la configuration (workers, replicas, rate limiting) en conséquence
+
+---
+
+## Sprint 5 : Valorisation & Portfolio
+*Objectif : Documentation professionnelle et packaging du projet pour le CV.*
+
+### Documentation technique
+- [ ] Rédiger le README.md complet en anglais (version portfolio internationale)
 - [ ] Créer un schéma d'architecture professionnel (Excalidraw/Draw.io)
-- [ ] Documenter les compromis techniques (FastAPI vs Flask, ArgoCD vs GH Actions)
-- [ ] Finaliser le README.md (en Anglais pour le portfolio, mais documenté ici)
-- [ ] Ajouter un rapport "FinOps" (Stratégies d'optimisation des coûts implémentées)
+  - [ ] Vue globale : flux de données end-to-end (user → API → LLM → response)
+  - [ ] Vue infra : Terraform → K8s → ArgoCD → Monitoring
+- [ ] Documenter les compromis techniques (design decisions) :
+  - [ ] FastAPI vs Flask (performance async, typing natif)
+  - [ ] Groq vs OpenAI (latence, coût, open-source)
+  - [ ] ArgoCD vs GitHub Actions CD (GitOps vs push-based)
+  - [ ] Minikube vs EKS (coût vs production-readiness)
+
+### Rapport FinOps
+- [ ] Calculer le coût mensuel de la stack en production (AWS EKS)
+  - [ ] Cluster EKS : compute, networking, storage
+  - [ ] API LLM : coût par requête, projection mensuelle
+  - [ ] Monitoring : stockage Prometheus, rétention Grafana
+- [ ] Documenter les stratégies d'optimisation implémentées :
+  - [ ] Migration EKS → minikube pour le dev (économie ~70$/mois)
+  - [ ] Optimisation des prompts (réduction tokens de ~30%)
+  - [ ] `terraform destroy` automatique après chaque session
+  - [ ] Rate limiting et circuit breaker pour contrôler les coûts LLM
+- [ ] Créer un tableau comparatif coût/performance
+
+### Packaging final
+- [ ] Passer en revue et nettoyer l'ensemble du code (dead code, TODOs)
+- [ ] S'assurer que le typage (type hinting) est complet sur chaque fonction
+- [ ] Vérifier que chaque module a une docstring claire
+- [ ] Créer un `Makefile` ou un `justfile` pour les commandes courantes
+- [ ] Ajouter un fichier `CONTRIBUTING.md` (bonnes pratiques, workflow Git)
+- [ ] Vérifier la compatibilité multi-OS (Windows/Linux) via `pathlib`
+- [ ] Préparer un script de démo rapide (`scripts/demo.sh`) pour les présentations
 
 ---
 
-### Tâches récurrentes et bonnes pratiques
-- [ ] FinOps : S'assurer que terraform destroy est lancé après chaque session.
-- [ ] Sécurité : Aucun secret dans Git (utiliser Secrets Manager/GitHub Secrets).
-- [ ] Qualité du code : Typage (type hinting) et documentation pour chaque fonction.
-- [ ] Compatibilité : Garantir le fonctionnement multi-OS (Windows/Linux) via `pathlib` et scripts Python.
-- [ ] Linting : Exécution systématique de Ruff avant chaque commit.
-- [ ] Infrastructure : Validation des fichiers Terraform avec `terraform validate`.
-- [ ] Kubernetes : Utilisation de Helm pour structurer les déploiements complexes.
+## Tâches récurrentes et bonnes pratiques
+- [ ] **FinOps :** S'assurer que `terraform destroy` est lancé après chaque session
+- [ ] **Sécurité :** Aucun secret dans Git (utiliser Secrets Manager / GitHub Secrets)
+- [ ] **Qualité du code :** Typage (type hinting) et documentation pour chaque fonction
+- [ ] **Compatibilité :** Garantir le fonctionnement multi-OS (Windows/Linux) via `pathlib`
+- [ ] **Linting :** Exécution systématique de Ruff avant chaque commit
+- [ ] **Infrastructure :** Validation des fichiers Terraform avec `terraform validate`
+- [ ] **Kubernetes :** Utilisation de Helm pour structurer les déploiements complexes
+- [ ] **Git :** Commits atomiques avec messages conventionnels (`feat:`, `fix:`, `docs:`, `ci:`)
