@@ -18,6 +18,7 @@ class TestAnalysisRequestDefaults:
         assert req.language == "python"
         assert req.mode == "doc"
         assert req.question is None
+        assert req.provider == "groq"
 
     def test_default_language_is_python(self):
         """le langage par defaut doit etre python"""
@@ -28,6 +29,11 @@ class TestAnalysisRequestDefaults:
         """le mode par defaut doit etre doc"""
         req = AnalysisRequest(content="code")
         assert req.mode == "doc"
+
+    def test_default_provider_is_groq(self):
+        """le provider par defaut doit etre groq"""
+        req = AnalysisRequest(content="code")
+        assert req.provider == "groq"
 
 
 class TestAnalysisRequestValidation:
@@ -48,6 +54,11 @@ class TestAnalysisRequestValidation:
         with pytest.raises(ValidationError):
             AnalysisRequest(content="code", mode="invalid")
 
+    def test_invalid_provider_rejected(self):
+        """un provider autre que 'groq' ou 'gemini' doit etre rejete"""
+        with pytest.raises(ValidationError):
+            AnalysisRequest(content="code", provider="openai")
+
     def test_mode_doc_accepted(self):
         """le mode 'doc' est valide"""
         req = AnalysisRequest(content="code", mode="doc")
@@ -57,6 +68,16 @@ class TestAnalysisRequestValidation:
         """le mode 'question' est valide"""
         req = AnalysisRequest(content="texte", mode="question", question="quoi ?")
         assert req.mode == "question"
+
+    def test_provider_groq_accepted(self):
+        """le provider 'groq' est valide"""
+        req = AnalysisRequest(content="code", provider="groq")
+        assert req.provider == "groq"
+
+    def test_provider_gemini_accepted(self):
+        """le provider 'gemini' est valide"""
+        req = AnalysisRequest(content="code", provider="gemini")
+        assert req.provider == "gemini"
 
 
 class TestAnalysisRequestQuestionMode:
