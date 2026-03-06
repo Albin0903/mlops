@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlops-api
+  labels:
+    app.kubernetes.io/name: mlops-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mlops-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mlops-api
+    spec:
+      containers:
+        - name: mlops-api
+          image: ghcr.io/albin0903/mlops:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: mlops-api-secrets
+                optional: true
+          ports:
+            - containerPort: 8000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
