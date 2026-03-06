@@ -91,11 +91,7 @@ class TestAnalysisRequestQuestionMode:
 
     def test_question_field_accepted_in_question_mode(self):
         """la question est acceptee en mode question"""
-        req = AnalysisRequest(
-            content="document technique",
-            mode="question",
-            question="quel framework est utilise ?"
-        )
+        req = AnalysisRequest(content="document technique", mode="question", question="quel framework est utilise ?")
         assert req.question == "quel framework est utilise ?"
 
     def test_custom_language(self):

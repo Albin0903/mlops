@@ -4,6 +4,7 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
 @router.get("/")
 async def get_health():
     """endpoint de sante : verifie le statut de l'api et la connectivite llm"""

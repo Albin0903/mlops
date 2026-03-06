@@ -7,12 +7,13 @@ from app.core.config import settings
 app = FastAPI(
     title=settings.project_name,
     description="api pour l'analyse de code haute performance basee sur les llms",
-    version=settings.version
+    version=settings.version,
 )
 
 # inclusion des routes
 app.include_router(health.router, prefix="/health", tags=["Monitoring"])
 app.include_router(analysis.router, prefix="/analyze", tags=["Analyse LLM"])
+
 
 @app.get("/")
 async def root():

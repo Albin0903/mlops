@@ -8,6 +8,7 @@ router = APIRouter()
 
 # regle d'ingenierie : streaming asynchrone pour une experience utilisateur fluide
 
+
 @router.post("/")
 async def analyze_code(request: AnalysisRequest):
     """endpoint principal pour l'analyse de code ou generation de doc en streaming"""
@@ -26,5 +27,5 @@ async def analyze_code(request: AnalysisRequest):
     # retour d'une reponse en streaming vers le client (provider configurable)
     return StreamingResponse(
         llm_service.get_streaming_response(prompt, system_message, mode=request.mode, provider=request.provider),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
     )

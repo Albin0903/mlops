@@ -37,6 +37,7 @@ def mock_no_groq_api_key():
 @pytest.fixture
 def mock_streaming_response():
     """simule une reponse llm en streaming (3 chunks)"""
+
     async def fake_stream(*args, **kwargs):
         chunks = ["Bonjour", " le", " monde"]
         for text in chunks:

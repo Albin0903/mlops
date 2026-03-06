@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """configuration de l'application via variables d'environnement"""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

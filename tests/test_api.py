@@ -15,11 +15,9 @@ async def test_analyze_doc_mode_returns_streaming(client, mock_groq_api_key, moc
         mock_service.get_system_prompt.return_value = "system prompt"
         mock_service.get_streaming_response = mock_streaming_response
 
-        response = await client.post("/analyze/", json={
-            "content": "def hello(): pass",
-            "language": "python",
-            "mode": "doc"
-        })
+        response = await client.post(
+            "/analyze/", json={"content": "def hello(): pass", "language": "python", "mode": "doc"}
+        )
 
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]
@@ -33,12 +31,15 @@ async def test_analyze_question_mode_returns_streaming(client, mock_groq_api_key
         mock_service.get_system_prompt.return_value = "system prompt"
         mock_service.get_streaming_response = mock_streaming_response
 
-        response = await client.post("/analyze/", json={
-            "content": "le projet utilise terraform",
-            "language": "text",
-            "mode": "question",
-            "question": "quel outil est utilise ?"
-        })
+        response = await client.post(
+            "/analyze/",
+            json={
+                "content": "le projet utilise terraform",
+                "language": "text",
+                "mode": "question",
+                "question": "quel outil est utilise ?",
+            },
+        )
 
         assert response.status_code == 200
         assert response.text == "Bonjour le monde"
@@ -47,11 +48,7 @@ async def test_analyze_question_mode_returns_streaming(client, mock_groq_api_key
 @pytest.mark.asyncio
 async def test_analyze_question_mode_without_question_returns_400(client, mock_groq_api_key):
     """le mode question sans question doit retourner une erreur 400"""
-    response = await client.post("/analyze/", json={
-        "content": "du texte",
-        "language": "text",
-        "mode": "question"
-    })
+    response = await client.post("/analyze/", json={"content": "du texte", "language": "text", "mode": "question"})
 
     assert response.status_code == 400
     data = response.json()
@@ -61,10 +58,7 @@ async def test_analyze_question_mode_without_question_returns_400(client, mock_g
 @pytest.mark.asyncio
 async def test_analyze_invalid_mode_returns_422(client, mock_groq_api_key):
     """un mode invalide doit retourner une erreur 422 (validation pydantic)"""
-    response = await client.post("/analyze/", json={
-        "content": "code",
-        "mode": "invalid_mode"
-    })
+    response = await client.post("/analyze/", json={"content": "code", "mode": "invalid_mode"})
 
     assert response.status_code == 422
 
@@ -72,10 +66,7 @@ async def test_analyze_invalid_mode_returns_422(client, mock_groq_api_key):
 @pytest.mark.asyncio
 async def test_analyze_empty_content_returns_422(client, mock_groq_api_key):
     """un contenu vide doit retourner une erreur 422"""
-    response = await client.post("/analyze/", json={
-        "content": "",
-        "mode": "doc"
-    })
+    response = await client.post("/analyze/", json={"content": "", "mode": "doc"})
 
     assert response.status_code == 422
 
@@ -83,9 +74,7 @@ async def test_analyze_empty_content_returns_422(client, mock_groq_api_key):
 @pytest.mark.asyncio
 async def test_analyze_missing_content_returns_422(client, mock_groq_api_key):
     """le champ content est obligatoire"""
-    response = await client.post("/analyze/", json={
-        "mode": "doc"
-    })
+    response = await client.post("/analyze/", json={"mode": "doc"})
 
     assert response.status_code == 422
 
@@ -97,9 +86,7 @@ async def test_analyze_default_values(client, mock_groq_api_key, mock_streaming_
         mock_service.get_system_prompt.return_value = "system prompt"
         mock_service.get_streaming_response = mock_streaming_response
 
-        response = await client.post("/analyze/", json={
-            "content": "def test(): pass"
-        })
+        response = await client.post("/analyze/", json={"content": "def test(): pass"})
 
         assert response.status_code == 200
         # verifier que le prompt a ete genere avec les valeurs par defaut
