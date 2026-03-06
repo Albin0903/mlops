@@ -1,11 +1,13 @@
 import time
-from groq import AsyncGroq
+
 from google import genai
 from google.genai import types
-from loguru import logger
+from groq import AsyncGroq
 from langfuse import get_client
-from app.core.config import settings
+from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
+
+from app.core.config import settings
 
 # regle : resilience, streaming et observabilite pour l'excellence mlops
 

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from app.api.routes import analysis, health
 from app.core.config import settings
 

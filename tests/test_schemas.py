@@ -5,6 +5,7 @@ verifie que les entrees invalides sont rejetees et les valeurs par defaut correc
 
 import pytest
 from pydantic import ValidationError
+
 from app.schemas.analysis import AnalysisRequest
 
 

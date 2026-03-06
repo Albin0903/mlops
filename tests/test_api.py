@@ -3,8 +3,9 @@ tests/test_api.py — tests d'integration des endpoints fastapi.
 verifie le comportement complet de l'api avec mocking du service llm.
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
 
 
 @pytest.mark.asyncio

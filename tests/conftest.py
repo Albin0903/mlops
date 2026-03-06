@@ -3,10 +3,12 @@ configuration partagee pour les tests.
 fixtures reutilisables : client http async, mock du service llm.
 """
 
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
-from unittest.mock import patch
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 
 

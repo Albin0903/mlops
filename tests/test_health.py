@@ -3,8 +3,9 @@ tests/test_health.py — tests du endpoint /health/
 verifie le statut de l'api et la detection de la connectivite llm.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.mark.asyncio
