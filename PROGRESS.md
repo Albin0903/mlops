@@ -36,6 +36,7 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 ### FastAPI & intégration LLM
 - [x] Initialiser le projet FastAPI avec des gestionnaires `async def`
 - [x] Intégrer l'API Groq (Llama 3.3 70B) en streaming asynchrone
+- [x] Intégrer l'API Gemini (gemini-3.1-flash-lite) en tant que provider alternatif
 - [x] Implémenter des tentatives (Retries) avec backoff exponentiel (Résilience)
 - [x] Ajouter des modèles Pydantic stricts pour la validation entrée/sortie
 - [x] Optimiser les system prompts pour réduire la consommation de tokens
@@ -47,20 +48,20 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 - [x] Configurer le fichier `.dockerignore`
 
 ### Observabilité LLM (Langfuse)
-- [ ] Intégrer le SDK Langfuse dans `app/services/llm_service.py`
-- [ ] Logger les prompts, les réponses et la latence de chaque appel LLM
-- [ ] Suivre l'utilisation des tokens (entrée/sortie) et calcul du coût par requête
-- [ ] Créer des traces nommées pour chaque endpoint (`/analyze/doc`, `/analyze/question`)
+- [x] Intégrer le SDK Langfuse dans `app/services/llm_service.py`
+- [x] Logger les prompts, les réponses et la latence de chaque appel LLM
+- [x] Suivre l'utilisation des tokens (entrée/sortie) et calcul du coût par requête
+- [x] Créer des traces nommées pour chaque endpoint (`/analyze/doc`, `/analyze/question`)
 - [ ] Ajouter un screenshot du dashboard Langfuse dans le README
 
 ### Tests automatisés (Pytest)
-- [ ] Configurer `pytest` et `pytest-cov` dans `requirements-dev.txt`
-- [ ] Écrire les tests des endpoints FastAPI avec `httpx.AsyncClient` (`tests/test_api.py`)
-- [ ] Écrire les tests du service LLM avec mocking de l'API Groq (`tests/test_llm_service.py`)
-- [ ] Écrire les tests de validation des schémas Pydantic (`tests/test_schemas.py`)
-- [ ] Écrire les tests du health check et de la configuration (`tests/test_health.py`)
-- [ ] Atteindre un taux de couverture ≥ 70%
-- [ ] Ajouter un badge de couverture dans le README
+- [x] Configurer `pytest` et `pytest-cov` dans `requirements-dev.txt`
+- [x] Écrire les tests des endpoints FastAPI avec `httpx.AsyncClient` (`tests/test_api.py`)
+- [x] Écrire les tests du service LLM avec mocking de l'API Groq (`tests/test_llm_service.py`)
+- [x] Écrire les tests de validation des schémas Pydantic (`tests/test_schemas.py`)
+- [x] Écrire les tests du health check et de la configuration (`tests/test_health.py`)
+- [x] Atteindre un taux de couverture ≥ 70% (99% atteint)
+- [x] Ajouter un badge de couverture dans le README
 
 ---
 
@@ -68,18 +69,17 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 *Objectif : Passer des déploiements "push" vers le "GitOps" (pull).*
 
 ### Intégration continue (CI) — GitHub Actions
-- [ ] Configurer le workflow `.github/workflows/ci.yml`
-  - [ ] Étape : Linting avec Ruff (vérification de style et erreurs)
-  - [ ] Étape : Tests unitaires avec Pytest + couverture
-  - [ ] Étape : Scan de sécurité de l'image Docker avec Trivy
-  - [ ] Étape : Analyse de qualité de code avec SonarQube / SonarCloud
-  - [ ] Étape : Build & push de l'image vers GHCR (GitHub Container Registry)
-- [ ] Ajouter des badges CI (build status, coverage, security) dans le README
+- [x] Configurer le workflow `.github/workflows/ci.yml`
+  - [x] Étape : Linting avec Ruff (vérification de style et erreurs)
+  - [x] Étape : Tests unitaires avec Pytest + couverture
+  - [x] Étape : Scan de sécurité de l'image Docker avec Trivy
+  - [x] Étape : Build & push de l'image vers GHCR (GitHub Container Registry)
+- [x] Ajouter des badges CI (build status, coverage, security) dans le README
 
 ### Workflow Git professionnel
-- [ ] Créer la branche `develop` depuis `main`
-- [ ] Adopter un workflow Git Flow simplifié (`main` → `develop` → `feature/*`)
-- [ ] Créer des Pull Requests pour chaque feature (historique visible par les recruteurs)
+- [x] Créer la branche `develop` depuis `main`
+- [x] Adopter un workflow Git Flow simplifié (`main` → `develop` → `feature/*`)
+- [x] Créer des Pull Requests pour chaque feature (historique visible par les recruteurs)
 - [ ] Configurer des règles de protection sur `main` (review requise, CI verte)
 
 ### Déploiement continu (CD) avec ArgoCD
