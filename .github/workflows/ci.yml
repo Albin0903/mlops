@@ -84,13 +84,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Lowercase image name
+        id: image
+        run: echo "name=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_NAME }}:scan .
+        run: docker build -t ${{ steps.image.outputs.name }}:scan .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_NAME }}:scan
+          image-ref: ${{ steps.image.outputs.name }}:scan
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
