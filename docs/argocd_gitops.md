@@ -1,66 +1,77 @@
 # ArgoCD et GitOps
 
-Ce document decrit l'integration GitOps mise en place pour le projet.
+Comment le deploiement continu fonctionne sur ce projet.
 
 ## Principe
 
-La CI GitHub Actions construit et publie l'image Docker sur GHCR.
-ArgoCD surveille ensuite le dossier `gitops/overlays/minikube` du depot Git et
-reconcilie automatiquement l'etat du cluster Kubernetes avec l'etat declare dans
-Git.
+La CI (GitHub Actions) construit l'image Docker et la pousse sur GHCR.
+ArgoCD surveille le dossier `gitops/overlays/minikube` sur la branche `main` et synchronise automatiquement le cluster avec ce qui est declare dans Git. Si quelqu'un modifie le cluster a la main, ArgoCD corrige tout seul (self-heal).
 
-## Structure
+## Organisation des fichiers
 
-- `gitops/base/` : deployment, service et ingress de l'API.
-- `gitops/overlays/minikube/` : overlay cible pour l'environnement local minikube.
-- `argocd/applications/mlops.yaml` : ressource ArgoCD `Application` qui pointe vers le repo GitHub.
+```text
+gitops/
+  base/                   # deployment, service, ingress de l'API
+  overlays/minikube/      # configuration specifique a minikube
+argocd/
+  applications/mlops.yaml # declaration de l'app ArgoCD
+```
 
-## Flux de deploiement
+## Comment ca se passe concretement
 
-1. Un commit sur `main` declenche la CI.
-2. L'image est publiee sur GHCR avec le tag `latest`.
-3. ArgoCD detecte l'etat desire depuis Git.
-4. ArgoCD applique ou corrige les ressources sur le cluster.
+1. Un push sur `main` declenche la CI.
+2. La CI publie l'image sur `ghcr.io/albin0903/mlops:latest`.
+3. ArgoCD detecte les changements dans le repo Git.
+4. Il applique (ou corrige) les ressources Kubernetes automatiquement.
 
-## Pre-requis
+## Ce qu'il faut avoir en place
 
-- ArgoCD installe dans le namespace `argocd`.
-- Le cluster minikube doit avoir l'addon Ingress active.
-- L'image `ghcr.io/albin0903/mlops:latest` doit etre accessible.
-- L'hostname d'Ingress utilise par cet overlay est `mlops-gitops.local` pour ne pas entrer en conflit avec le manifest de demo `k8s/hello-world.yaml`.
+- ArgoCD installe dans le namespace `argocd` du cluster.
+- L'addon Ingress active sur minikube (`minikube addons enable ingress`).
+- L'image `ghcr.io/albin0903/mlops:latest` accessible depuis le cluster.
+- L'Ingress utilise le hostname `mlops-gitops.local` pour ne pas entrer en conflit avec le manifest de demo `k8s/hello-world.yaml`.
 
 ## Commandes utiles
 
-Appliquer localement les manifests pour validation :
+Valider les manifests localement avant de pousser :
 
 ```powershell
 kubectl apply --dry-run=client -k gitops/overlays/minikube
 ```
 
-Creer l'application ArgoCD une fois les fichiers pousses sur `main` :
+Creer l'application ArgoCD (une seule fois, apres le premier push sur `main`) :
 
 ```powershell
 kubectl apply -f argocd/applications/mlops.yaml
 ```
 
-Verifier le statut :
+Verifier que tout roule :
 
 ```powershell
 kubectl get applications -n argocd
 kubectl describe application mlops -n argocd
 ```
 
-## Secrets
-
-Les cles LLM et Langfuse ne doivent pas etre committees dans Git.
-Le deployment reference un secret Kubernetes optionnel nomme `mlops-api-secrets`.
-
-Exemple de creation locale :
+Acceder a l'interface web ArgoCD :
 
 ```powershell
-kubectl create secret generic mlops-api-secrets -n mlops \
-  --from-literal=groq_api_key=... \
-  --from-literal=gemini_api_key=... \
-  --from-literal=langfuse_public_key=... \
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# ouvrir https://localhost:8080
+# login : admin / mot de passe recupere avec :
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+## Gestion des secrets
+
+Les cles API (Groq, Gemini, Langfuse) ne doivent jamais etre commitees.
+Le deployment reference un secret Kubernetes optionnel `mlops-api-secrets`.
+
+Pour le creer en local :
+
+```powershell
+kubectl create secret generic mlops-api-secrets -n mlops `
+  --from-literal=groq_api_key=... `
+  --from-literal=gemini_api_key=... `
+  --from-literal=langfuse_public_key=... `
   --from-literal=langfuse_secret_key=...
 ```

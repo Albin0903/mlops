@@ -1,19 +1,22 @@
-# Standards d'ingénierie et de style
+# Standards du projet
 
-Ce document définit les règles strictes de développement pour garantir la sobriété et le professionnalisme du projet.
+Quelques regles simples pour garder le code propre et coherent.
 
-## Règles de rédaction et de communication
-- Interdiction d'utiliser des emojis dans le code, les commentaires, les messages de commit, les logs ou la documentation.
-- Interdiction d'utiliser des majuscules en milieu de phrase ou pour mettre en avant des mots (sauf noms propres techniques comme Python, Docker, Terraform).
-- Interdiction d'adopter un ton trop formel, scolaire ou verbeux typique des ia. L'écriture doit être directe, technique et factuelle.
-- Interdiction d'ajouter des phrases de politesse génériques ("voici le code", "je suis ravi de vous aider"). Allez à l'essentiel technique.
+## Style et redaction
 
-## Sécurité et développement
-- Interdiction de commiter des secrets, des clés api ou des fichiers de configuration locale (`.env`, `.tfstate`).
-- Obligation de valider chaque commit avec les hooks `pre-commit` localement.
-- Obligation d'utiliser `pathlib` pour la gestion des chemins afin d'assurer la compatibilité entre windows et linux.
-- Les messages de log doivent être structurés (ex: `info: processing started for {filename}`) et sans décoration graphique.
+- Pas d'emojis dans le code, les commits, les logs ou la doc.
+- Pas de majuscules decoratives en pleine phrase (sauf noms propres : Python, Docker, etc.).
+- Ton direct et technique. On evite les tournures scolaires ou les phrases de remplissage.
 
-## Infrastructure et code
-- Le code python doit suivre les standards `ruff` et être testé via `pytest`.
-- La configuration terraform doit être modulaire et utiliser un backend distant pour la gestion de l'état.- Interdiction d'ajouter des espaces pour aligner les opérateurs = (le code doit être compact).
+## Securite
+
+- Jamais de secrets ou de cles API dans Git (`.env`, `.tfstate` restent en local).
+- Chaque commit passe par les hooks `pre-commit` avant d'etre pousse.
+- Utiliser `pathlib` pour les chemins de fichiers (compatibilite Windows/Linux).
+
+## Code et infra
+
+- Python : le code suit les regles `ruff` et est couvert par `pytest`.
+- Terraform : modules independants, backend distant pour l'etat.
+- Les logs restent structures et lisibles (`info: processing started for {filename}`), sans decoration.
+- Pas d'alignement d'operateurs `=` — on garde le code compact.

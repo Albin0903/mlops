@@ -6,7 +6,7 @@
 [![Docker](https://img.shields.io/badge/docker-multi--stage-2496ED.svg)](Dockerfile)
 
 ## Objectif
-Concevoir, déployer et monitorer une API d'analyse de code alimentée par des LLMs. Ce projet met l'accent sur l'**excellence de l'infrastructure** (haute disponibilité, sécurité, maitrise des coûts, CI/CD moderne) plutôt que sur la seule performance du modèle d'IA.
+Une API d'analyse de code qui s'appuie sur des LLMs, avec un vrai focus sur l'infra : haute dispo, securite, maitrise des couts et CI/CD moderne. L'idee c'est de montrer un projet MLOps complet, pas juste un wrapper autour d'un modele.
 
 ## Pile technique
 - **Langages :** Python 3.13, FastAPI (100% asynchrone)
@@ -21,29 +21,33 @@ Concevoir, déployer et monitorer une API d'analyse de code alimentée par des L
 ## Architecture du projet
 ```text
 mlops/
-├── app/                          # code source de l'api (fastapi)
+├── app/                          # code source fastapi
 │   ├── api/routes/               # endpoints (analysis, health)
-│   ├── core/                     # configuration centralisee (secrets, env)
-│   ├── schemas/                  # contrats de donnees (pydantic)
+│   ├── core/                     # config centralisee (secrets, env)
+│   ├── schemas/                  # modeles pydantic
 │   └── services/                 # logique metier (llm_service)
-├── k8s/                          # manifestes kubernetes
-├── terraform/modules/            # infrastructure as code (vpc, iam, cluster)
-├── scripts/                      # automatisation (manage_infra, test_streaming)
-├── Dockerfile                    # multi-stage build, utilisateur non-root
-├── requirements.txt              # dependances production
-└── PROGRESS.md                   # suivi du projet (24 semaines)
+├── gitops/                       # manifests kubernetes (gitops)
+│   ├── base/                     # deployment, service, ingress
+│   └── overlays/minikube/        # overlay pour l'env local
+├── argocd/applications/          # declaration de l'app argocd
+├── k8s/                          # manifests kubernetes (demo)
+├── terraform/modules/            # iac (vpc, iam, cluster)
+├── scripts/                      # automatisation python
+├── docs/                         # documentation technique
+├── Dockerfile                    # multi-stage, non-root
+└── PROGRESS.md                   # suivi du projet
 ```
 
-## Fonctionnalités
-- **Architecture multi-provider :** Groq et Gemini disponibles via un paramètre `provider` dans chaque requête.
-- **Génération de documentation :** Soumettez du code source et recevez une documentation Markdown structurée en streaming.
-- **Questions sur documents :** Posez des questions précises sur un fichier technique et obtenez une réponse raisonnée.
-- **Streaming temps réel :** Les réponses du LLM sont envoyées chunk par chunk via Server-Sent Events.
-- **Observabilité LLM :** Chaque appel est tracé dans Langfuse (prompt, réponse, tokens, coût, latence).
-- **Gestion des coûts :** Prompts systèmes optimisés et calcul du coût par requête (FinOps).
-- **Résilience :** Retry automatique avec backoff exponentiel en cas d'erreur réseau.
-- **Sécurité :** Image Docker non-root, secrets injectés via `.env`, scan pre-commit.
-- **CI/CD :** Pipeline GitHub Actions (Ruff, Pytest, Trivy, GHCR) déclenché sur chaque push.
+## Fonctionnalites
+- **Multi-provider :** Groq et Gemini selectionnables via le parametre `provider`.
+- **Generation de doc :** soumet du code, recois une doc Markdown structuree en streaming.
+- **Q&A sur documents :** pose une question sur un fichier technique, obtiens une reponse argumentee.
+- **Streaming SSE :** les reponses arrivent chunk par chunk en temps reel.
+- **Tracing LLM :** chaque appel est trace dans Langfuse (tokens, cout, latence).
+- **FinOps :** prompts optimises, cout calcule par requete.
+- **Resilience :** retry avec backoff exponentiel sur erreurs reseau.
+- **Securite :** image Docker non-root, secrets via `.env`, scan pre-commit.
+- **CI/CD :** GitHub Actions (Ruff, Pytest, Trivy, GHCR) + ArgoCD pour le deploiement GitOps.
 
 ---
 
@@ -130,18 +134,39 @@ Toutes les commandes doivent être lancées depuis le dossier `terraform/`.
 - **Déployer le réseau/IAM :** `terraform apply`
 
 ### Kubernetes (minikube)
-Le projet utilise minikube pour le développement sans frais.
-- **Démarrer le cluster :** `minikube start --driver=docker`
+Le projet utilise minikube pour le dev local (zero frais).
+- **Demarrer le cluster :** `minikube start --driver=docker`
 - **Activer l'Ingress :** `minikube addons enable ingress`
-- **Déployer les manifestes :** `kubectl apply -f k8s/`
-- **Arrêter le cluster :** `minikube stop`
+- **Deployer les manifests :** `kubectl apply -f k8s/`
+- **Arreter le cluster :** `minikube stop`
+
+### Deploiement GitOps (ArgoCD)
+Le deploiement continu est gere par ArgoCD. Les manifests Kubernetes vivent dans `gitops/` et ArgoCD synchronise automatiquement le cluster avec ce qui est declare dans Git.
+
+```powershell
+# installer argocd sur le cluster (une seule fois)
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# declarer l'application
+kubectl apply -f argocd/applications/mlops.yaml
+
+# verifier le statut
+kubectl get applications -n argocd
+
+# acceder a l'interface web
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# puis ouvrir https://localhost:8080
+```
+
+Plus de details dans [docs/argocd_gitops.md](docs/argocd_gitops.md).
 
 ### Automatisation (Scripts Python)
 ```powershell
 # deployer l'infrastructure terraform
 python scripts/manage_infra.py up --yes
 
-# deployer les manifestes kubernetes
+# deployer les manifests kubernetes
 python scripts/manage_infra.py deploy
 
 # detruire l'infrastructure (finops)
@@ -150,6 +175,4 @@ python scripts/manage_infra.py down --yes
 
 ---
 
-> Note : Ce projet est actuellement en phase de développement actif. [Suivre l'avancement ici](PROGRESS.md).
->
-> Les standards d'ingénierie appliqués sont documentés dans le [guide des standards](docs/engineering_standards.md).
+> Ce projet est en developpement actif. [Suivre l'avancement](PROGRESS.md) | [Standards du projet](docs/engineering_standards.md)
