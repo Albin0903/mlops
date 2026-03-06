@@ -82,12 +82,14 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 - [x] Créer des Pull Requests pour chaque feature (historique visible par les recruteurs)
 - [x] Configurer des règles de protection sur `main` (review requise, CI verte)
 
-### Déploiement continu (CD) avec ArgoCD
+### Deploiement continu (CD) avec ArgoCD
 - [x] Installer ArgoCD sur le cluster Kubernetes (minikube)
-- [ ] Créer un dépôt "GitOps" séparé pour les manifestes K8s
-- [ ] Connecter ArgoCD au dépôt pour la synchronisation automatique
-- [ ] Implémenter une logique de déploiement Blue/Green ou Canary
-- [ ] Documenter le flux GitOps avec un schéma (draw.io)
+- [x] Creer les manifests GitOps (`gitops/base/`, `gitops/overlays/minikube/`)
+- [x] Connecter ArgoCD au repo pour la synchronisation automatique (auto-sync + self-heal)
+- [x] Documenter le flux GitOps (`docs/argocd_gitops.md`)
+- [ ] Optionnel : separer le dossier GitOps dans un repo dedie
+- [ ] Implementer une logique de deploiement Blue/Green ou Canary
+- [ ] Ajouter un schema du flux GitOps (draw.io)
 
 ### Environnement de développement (.devcontainer)
 - [x] Créer `.devcontainer/devcontainer.json` (VS Code / GitHub Codespaces)

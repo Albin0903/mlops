@@ -1,13 +1,18 @@
-# Environnement de dev multi-OS
+# Compatibilite multi-OS
+
+Le projet tourne sur Windows et Linux. Quelques conventions pour eviter les problemes.
 
 ## Python
-- Utiliser des environnements virtuels (`venv`).
-- Utiliser `pathlib` dans le code Python au lieu de manipulations de chaînes de caractères pour les chemins de fichiers (compatibilité `/` vs `\`).
 
-## Scripts shell vs PowerShell
-- Les scripts d'automatisation majeurs doivent être écrits en **Python** (ex: `scripts/manage_infra.py`) pour garantir une exécution identique sur Windows et Linux.
-- Pour les commandes simples, privilégier des outils universels comme `make` (via Makefile) ou documenter les équivalents PowerShell/Bash.
+- Toujours utiliser un `venv` pour isoler les dependances.
+- Utiliser `pathlib` pour manipuler les chemins (evite les bugs `/` vs `\`).
+
+## Scripts
+
+- Les scripts d'automatisation sont en Python (`scripts/manage_infra.py`) pour tourner partout sans adaptation.
+- Pour les commandes simples, on documente les equivalents PowerShell et Bash.
 
 ## Docker
-- Utiliser des fins de ligne `LF` (Linux) pour les fichiers à l'intérieur des conteneurs.
-- Configuration `.gitattributes` recommandée pour forcer le format `LF` sur les scripts shell.
+
+- Les fichiers a l'interieur des conteneurs utilisent des fins de ligne `LF` (Linux).
+- Le `.gitattributes` force le format `LF` sur les scripts shell pour eviter les surprises au build.
