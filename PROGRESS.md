@@ -90,9 +90,9 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 - [ ] Documenter le flux GitOps avec un schéma (draw.io)
 
 ### Environnement de développement (.devcontainer)
-- [ ] Créer `.devcontainer/devcontainer.json` (VS Code / GitHub Codespaces)
-- [ ] Configurer les extensions pré-installées (Python, Ruff, Docker)
-- [ ] Ajouter un `postCreateCommand` pour installer les dépendances automatiquement
+- [x] Créer `.devcontainer/devcontainer.json` (VS Code / GitHub Codespaces)
+- [x] Configurer les extensions pré-installées (Python, Ruff, Docker)
+- [x] Ajouter un `postCreateCommand` pour installer les dépendances automatiquement
 - [ ] Tester le lancement en un clic via Codespaces
 
 ---
