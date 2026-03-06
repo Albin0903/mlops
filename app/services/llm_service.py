@@ -30,19 +30,7 @@ SYSTEM_PROMPTS = {
     ),
 }
 
-# cout par token par modele (prix publics)
-TOKEN_COST = {
-    "groq": {
-        "input": 0.59 / 1_000_000,  # $0.59 par million de tokens groq
-        "output": 0.79 / 1_000_000,
-    },
-    "gemini": {
-        "input": 0.0 / 1_000_000,  # gemini 3.1 flash lite preview : gratuit
-        "output": 0.0 / 1_000_000,
-    },
-}
-
-# configuration des modeles par provider
+# configuration des modeles par provider (version free tier)
 PROVIDER_MODELS = {
     "groq": "openai/gpt-oss-120b",
     "gemini": "gemini-3.1-flash-lite-preview",
@@ -89,28 +77,22 @@ class LLMService:
                 yield chunk.choices[0].delta.content, input_tokens, output_tokens
 
     async def _stream_gemini(self, prompt: str, system_message: str):
-        """generateur de streaming pour gemini avec google search et thinking"""
+        """generateur de streaming asynchrone pour gemini avec thinking mode"""
         full_prompt = f"{system_message}\n\n{prompt}"
 
-        # outils : google search pour grounding des reponses
-        tools = [
-            # types.Tool(google_search=types.GoogleSearch()), # google search non disponible en free tier
-        ]
-
-        # configuration avancee : thinking mode pour un raisonnement approfondi
         config = types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(
                 thinking_level="HIGH",
             ),
-            tools=tools,
         )
 
-        response = self.gemini_client.models.generate_content_stream(
+        # utilisation du client asynchrone (aio) pour ne pas bloquer l'event loop
+        response = await self.gemini_client.aio.models.generate_content_stream(
             model=PROVIDER_MODELS["gemini"],
             contents=full_prompt,
             config=config,
         )
-        for chunk in response:
+        async for chunk in response:
             if chunk.text:
                 input_tokens = getattr(chunk.usage_metadata, "prompt_token_count", 0) if chunk.usage_metadata else 0
                 output_tokens = (
@@ -134,6 +116,20 @@ class LLMService:
         input_tokens = 0
         output_tokens = 0
         model = PROVIDER_MODELS.get(provider, "unknown")
+        
+        # preparation de la trace langfuse
+        langfuse_generation = None
+        if settings.langfuse_enabled:
+            try:
+                langfuse = get_client()
+                langfuse_generation = langfuse.generation(
+                    name=f"llm-{mode}-{provider}",
+                    model=model,
+                    input={"prompt": prompt, "system_message": system_message},
+                    metadata={"provider": provider, "mode": mode, "model": model},
+                )
+            except Exception as e:
+                logger.warning(f"langfuse init failed (non-blocking) : {e}")
 
         try:
             # selection du stream selon le provider
@@ -150,46 +146,38 @@ class LLMService:
 
         except Exception as e:
             logger.error(f"erreur critique service llm ({provider}) : {e}")
-            yield f"\n\n[erreur] : {e}"
+            error_msg = "\n\n[Erreur technique lors de la generation du contenu. Le service a ete interrompu.]"
+            full_response.append(error_msg)
+            yield error_msg
+            
+            if langfuse_generation:
+                langfuse_generation.update(level="ERROR", status_message=str(e))
             return
 
         # calcul des metriques finales
         latency = time.perf_counter() - start_time
-        provider_costs = TOKEN_COST.get(provider, TOKEN_COST["groq"])
-        cost = (input_tokens * provider_costs["input"]) + (output_tokens * provider_costs["output"])
 
         logger.info(
             f"llm call completed | provider={provider} | model={model} | mode={mode} | "
             f"latency={latency:.2f}s | tokens_in={input_tokens} | "
-            f"tokens_out={output_tokens} | cost=${cost:.6f}"
+            f"tokens_out={output_tokens}"
         )
 
-        # enregistrement dans langfuse si configure
-        if settings.langfuse_enabled:
+        # mise a jour de la trace langfuse avec tokens et reponse complete
+        if langfuse_generation:
             try:
-                langfuse = get_client()
-                with langfuse.start_as_current_observation(
-                    name=f"llm-{mode}-{provider}",
-                    as_type="generation",
-                    model=model,
-                ) as generation:
-                    generation.update(
-                        input={"prompt": prompt, "system_message": system_message},
-                        output="".join(full_response),
-                        usage_details={
-                            "input_tokens": input_tokens,
-                            "output_tokens": output_tokens,
-                        },
-                        metadata={
-                            "provider": provider,
-                            "mode": mode,
-                            "latency_seconds": round(latency, 3),
-                            "estimated_cost_usd": round(cost, 6),
-                            "model": model,
-                        },
-                    )
+                langfuse_generation.end(
+                    output="".join(full_response),
+                    usage={
+                        "input": input_tokens,
+                        "output": output_tokens,
+                    },
+                    metadata={
+                        "latency_seconds": round(latency, 3),
+                    }
+                )
             except Exception as e:
-                logger.warning(f"langfuse logging failed (non-blocking) : {e}")
+                logger.warning(f"langfuse logging end failed (non-blocking) : {e}")
 
 
 llm_service = LLMService()
