@@ -10,11 +10,12 @@ Concevoir, déployer et monitorer une API d'analyse de code alimentée par des L
 
 ## Pile technique
 - **Langages :** Python 3.13, FastAPI (100% asynchrone)
-- **LLM :** Groq API (Llama 3.3 70B) avec streaming temps réel
+- **LLM :** Multi-provider — Groq (GPT-OSS 120B) + Google Gemini (3.1 Flash Lite) avec streaming temps réel
+- **Observabilité LLM :** Langfuse (tracing, tokens, coût par requête)
 - **Infrastructure :** Terraform (modules VPC/IAM), Kubernetes (minikube/EKS)
 - **Résilience :** Tenacity (retry avec backoff exponentiel)
-- **CI/CD :** GitHub Actions, ArgoCD (GitOps)
-- **Observabilité :** Prometheus, Grafana, Langfuse
+- **CI/CD :** GitHub Actions (Ruff, Pytest, Trivy, GHCR), ArgoCD (GitOps)
+- **Tests :** Pytest + pytest-cov (99% de couverture)
 - **Sécurité :** Trivy, pre-commit, detect-secrets, Docker non-root
 
 ## Architecture du projet
@@ -34,12 +35,15 @@ mlops/
 ```
 
 ## Fonctionnalités
+- **Architecture multi-provider :** Groq et Gemini disponibles via un paramètre `provider` dans chaque requête.
 - **Génération de documentation :** Soumettez du code source et recevez une documentation Markdown structurée en streaming.
-- **Questions sur documents :** Posez des questions précises sur un fichier technique et obtenez une réponse factuelle.
+- **Questions sur documents :** Posez des questions précises sur un fichier technique et obtenez une réponse raisonnée.
 - **Streaming temps réel :** Les réponses du LLM sont envoyées chunk par chunk via Server-Sent Events.
-- **Gestion des coûts :** Prompts systèmes optimisés pour réduire la consommation de tokens (FinOps).
+- **Observabilité LLM :** Chaque appel est tracé dans Langfuse (prompt, réponse, tokens, coût, latence).
+- **Gestion des coûts :** Prompts systèmes optimisés et calcul du coût par requête (FinOps).
 - **Résilience :** Retry automatique avec backoff exponentiel en cas d'erreur réseau.
 - **Sécurité :** Image Docker non-root, secrets injectés via `.env`, scan pre-commit.
+- **CI/CD :** Pipeline GitHub Actions (Ruff, Pytest, Trivy, GHCR) déclenché sur chaque push.
 
 ---
 
@@ -105,8 +109,11 @@ uvicorn app.main:app --reload
 Créer un fichier `.env` à la racine du projet :
 ```dotenv
 groq_api_key=gsk_votre_cle_ici
+gemini_api_key=votre_cle_gemini
 aws_id_key=votre_cle_aws
 aws_secret_key=votre_secret_aws
+langfuse_public_key=pk-lf-xxx
+langfuse_secret_key=sk-lf-xxx
 ```
 
 ### Validation du streaming
