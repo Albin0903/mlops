@@ -1,5 +1,12 @@
+# inclure les dependances de production
+-r requirements.txt
+
+# outils de developpement uniquement
 pre-commit==3.6.0
 detect-secrets==1.5.0
-ruff==0.1.9
-pytest==7.4.4
-
+ruff==0.9.10
+pytest==8.3.5
+pytest-asyncio==0.25.3
+pytest-cov==6.1.1
+black==24.2.0
+mypy==1.8.0
