@@ -1,0 +1,57 @@
+{
+  "name": "MLOps LLM Analyzer",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "minikube": "latest",
+      "helm": "latest"
+    }
+  },
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && pip install -r requirements-dev.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "hashicorp.terraform",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
+        "ruff.lineLength": 120,
+        "files.eol": "\n",
+        "editor.rulers": [
+          120
+        ]
+      }
+    }
+  },
+  "forwardPorts": [
+    8000
+  ],
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI",
+      "onAutoForward": "notify"
+    }
+  },
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}"
+  }
+}
