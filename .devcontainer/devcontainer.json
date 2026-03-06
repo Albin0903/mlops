@@ -1,17 +1,18 @@
 {
   "name": "MLOps LLM Analyzer",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
-
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    },
     "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
       "minikube": "latest",
       "helm": "latest"
     }
   },
-
   "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && pip install -r requirements-dev.txt",
-
   "customizations": {
     "vscode": {
       "extensions": [
@@ -35,19 +36,21 @@
         },
         "ruff.lineLength": 120,
         "files.eol": "\n",
-        "editor.rulers": [120]
+        "editor.rulers": [
+          120
+        ]
       }
     }
   },
-
-  "forwardPorts": [8000],
+  "forwardPorts": [
+    8000
+  ],
   "portsAttributes": {
     "8000": {
       "label": "FastAPI",
       "onAutoForward": "notify"
     }
   },
-
   "remoteEnv": {
     "PYTHONPATH": "${containerWorkspaceFolder}"
   }
