@@ -1,5 +1,10 @@
 # Scalable & secure LLM code analyzer
 
+[![CI Pipeline](https://github.com/Albin0903/mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/Albin0903/mlops/actions/workflows/ci.yml)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-multi--stage-2496ED.svg)](Dockerfile)
+
 ## Objectif
 Concevoir, déployer et monitorer une API d'analyse de code alimentée par des LLMs. Ce projet met l'accent sur l'**excellence de l'infrastructure** (haute disponibilité, sécurité, maitrise des coûts, CI/CD moderne) plutôt que sur la seule performance du modèle d'IA.
 

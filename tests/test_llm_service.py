@@ -3,9 +3,11 @@ tests/test_llm_service.py — tests du service llm avec mocking de l'api groq et
 aucun appel reel n'est effectue.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from app.services.llm_service import LLMService, SYSTEM_PROMPTS, TOKEN_COST, PROVIDER_MODELS
+
+from app.services.llm_service import PROVIDER_MODELS, SYSTEM_PROMPTS, TOKEN_COST, LLMService
 
 
 class TestSystemPrompts:
@@ -28,10 +30,10 @@ class TestSystemPrompts:
         prompt = SYSTEM_PROMPTS["doc"].format(language="python")
         assert "markdown" in prompt
 
-    def test_question_prompt_requires_factual_answer(self):
-        """le prompt question doit exiger une reponse factuelle"""
+    def test_question_prompt_requires_reasoned_answer(self):
+        """le prompt question doit exiger une reponse argumentee"""
         prompt = SYSTEM_PROMPTS["question"].format(language="text")
-        assert "factuelle" in prompt
+        assert "argumentee" in prompt
 
     def test_invalid_mode_raises_key_error(self):
         """un mode inexistant doit lever une KeyError"""

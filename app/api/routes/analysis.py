@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+
 from app.schemas.analysis import AnalysisRequest
 from app.services.llm_service import llm_service
 
 router = APIRouter()
 
 # regle d'ingenierie : streaming asynchrone pour une experience utilisateur fluide
+
 
 @router.post("/")
 async def analyze_code(request: AnalysisRequest):
@@ -25,5 +27,5 @@ async def analyze_code(request: AnalysisRequest):
     # retour d'une reponse en streaming vers le client (provider configurable)
     return StreamingResponse(
         llm_service.get_streaming_response(prompt, system_message, mode=request.mode, provider=request.provider),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
     )

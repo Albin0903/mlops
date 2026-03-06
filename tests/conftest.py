@@ -3,10 +3,12 @@ configuration partagee pour les tests.
 fixtures reutilisables : client http async, mock du service llm.
 """
 
+from unittest.mock import patch
+
 import pytest
 import pytest_asyncio
-from unittest.mock import patch
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+
 from app.main import app
 
 
@@ -35,6 +37,7 @@ def mock_no_groq_api_key():
 @pytest.fixture
 def mock_streaming_response():
     """simule une reponse llm en streaming (3 chunks)"""
+
     async def fake_stream(*args, **kwargs):
         chunks = ["Bonjour", " le", " monde"]
         for text in chunks:

@@ -1,11 +1,13 @@
 import time
-from groq import AsyncGroq
+
 from google import genai
 from google.genai import types
-from loguru import logger
+from groq import AsyncGroq
 from langfuse import get_client
-from app.core.config import settings
+from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
+
+from app.core.config import settings
 
 # regle : resilience, streaming et observabilite pour l'excellence mlops
 
@@ -31,11 +33,11 @@ SYSTEM_PROMPTS = {
 # cout par token par modele (prix publics)
 TOKEN_COST = {
     "groq": {
-        "input": 0.59 / 1_000_000,   # $0.59 par million de tokens groq
+        "input": 0.59 / 1_000_000,  # $0.59 par million de tokens groq
         "output": 0.79 / 1_000_000,
     },
     "gemini": {
-        "input": 0.0 / 1_000_000,    # gemini 3.1 flash lite preview : gratuit
+        "input": 0.0 / 1_000_000,  # gemini 3.1 flash lite preview : gratuit
         "output": 0.0 / 1_000_000,
     },
 }
@@ -57,11 +59,7 @@ class LLMService:
         """retourne le prompt systeme optimise selon le mode"""
         return SYSTEM_PROMPTS[mode].format(language=language)
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        reraise=True
-    )
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
     async def _create_groq_stream(self, prompt: str, system_message: str):
         """cree le flux groq (retryable car ne yield pas)"""
         return await self.groq_client.chat.completions.create(
@@ -96,7 +94,7 @@ class LLMService:
 
         # outils : google search pour grounding des reponses
         tools = [
-            #types.Tool(google_search=types.GoogleSearch()), # google search non disponible en free tier
+            # types.Tool(google_search=types.GoogleSearch()), # google search non disponible en free tier
         ]
 
         # configuration avancee : thinking mode pour un raisonnement approfondi
@@ -115,7 +113,9 @@ class LLMService:
         for chunk in response:
             if chunk.text:
                 input_tokens = getattr(chunk.usage_metadata, "prompt_token_count", 0) if chunk.usage_metadata else 0
-                output_tokens = getattr(chunk.usage_metadata, "candidates_token_count", 0) if chunk.usage_metadata else 0
+                output_tokens = (
+                    getattr(chunk.usage_metadata, "candidates_token_count", 0) if chunk.usage_metadata else 0
+                )
                 yield chunk.text, input_tokens, output_tokens
 
     async def get_streaming_response(self, prompt: str, system_message: str, mode: str = "doc", provider: str = "groq"):
