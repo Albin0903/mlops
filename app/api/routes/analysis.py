@@ -10,7 +10,7 @@ router = APIRouter()
 @router.post("/")
 async def analyze_code(request: AnalysisRequest):
     """endpoint principal pour l'analyse de code ou generation de doc en streaming"""
-    
+
     # recuperation du prompt systeme optimise depuis le service
     system_message = llm_service.get_system_prompt(request.mode, request.language)
 
@@ -22,8 +22,8 @@ async def analyze_code(request: AnalysisRequest):
             raise HTTPException(status_code=400, detail="la question est obligatoire en mode 'question'")
         prompt = f"document :\n{request.content}\n\nquestion : {request.question}"
 
-    # retour d'une reponse en streaming vers le client
+    # retour d'une reponse en streaming vers le client (provider configurable)
     return StreamingResponse(
-        llm_service.get_streaming_response(prompt, system_message),
+        llm_service.get_streaming_response(prompt, system_message, mode=request.mode, provider=request.provider),
         media_type="text/event-stream"
     )
