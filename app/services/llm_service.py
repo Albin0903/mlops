@@ -123,7 +123,7 @@ class LLMService:
         input_tokens = 0
         output_tokens = 0
         model = PROVIDER_MODELS.get(provider, "unknown")
-        
+
         # preparation de la trace langfuse
         langfuse_generation = None
         if settings.langfuse_enabled:
@@ -155,17 +155,20 @@ class LLMService:
             logger.error(f"erreur critique service llm ({provider}) : {e}")
             error_msg = "\n\n[Erreur technique lors de la generation du contenu. Le service a ete interrompu.]"
             full_response.append(error_msg)
-            
+
             # metrique d'erreur prometheus
             try:
                 from prometheus_client import Counter
-                LLM_ERRORS_TOTAL = Counter("llm_errors_total", "nombre total d'erreurs llm", ["provider", "model", "error_type"])
+
+                LLM_ERRORS_TOTAL = Counter(
+                    "llm_errors_total", "nombre total d'erreurs llm", ["provider", "model", "error_type"]
+                )
                 LLM_ERRORS_TOTAL.labels(provider=provider, model=model, error_type=type(e).__name__).inc()
-            except:
+            except Exception:
                 pass
 
             yield error_msg
-            
+
             if langfuse_generation:
                 langfuse_generation.update(level="ERROR", status_message=str(e))
             return
@@ -182,10 +185,15 @@ class LLMService:
         # metriques prometheus
         try:
             from prometheus_client import Counter, Histogram
-            LLM_REQUESTS_TOTAL = Counter("llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"])
-            LLM_TOKENS_TOTAL = Counter("llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"])
+
+            LLM_REQUESTS_TOTAL = Counter(
+                "llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"]
+            )
+            LLM_TOKENS_TOTAL = Counter(
+                "llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"]
+            )
             LLM_LATENCY_SECONDS = Histogram("llm_latency_seconds", "latence des appels llm", ["provider", "model"])
-            
+
             LLM_REQUESTS_TOTAL.labels(provider=provider, model=model, mode=mode).inc()
             LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="input").inc(input_tokens)
             LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="output").inc(output_tokens)
@@ -204,7 +212,7 @@ class LLMService:
                     },
                     metadata={
                         "latency_seconds": round(latency, 3),
-                    }
+                    },
                 )
             except Exception as e:
                 logger.warning(f"langfuse logging end failed (non-blocking) : {e}")

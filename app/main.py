@@ -18,6 +18,7 @@ app.include_router(analysis.router, prefix="/analyze", tags=["Analyse LLM"])
 # configuration du monitoring prometheus
 Instrumentator().instrument(app).expose(app, tags=["Monitoring"])
 
+
 @app.get("/")
 async def root():
     return {"message": "l'api llm code analyzer est opérationnelle"}
