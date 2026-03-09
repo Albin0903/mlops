@@ -99,8 +99,20 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 
 ---
 
-## Sprint 4 : Monitoring & Observabilité
-*Objectif : Excellence opérationnelle avec une stack de monitoring complète.*
+## Sprint 4 : CI/CD 2.0 & Monitoring Avancé
+*Objectif : Excellence opérationnelle avec Dagger, DVC et monitoring de drift.*
+
+### CI/CD "Local-first" (Dagger)
+- [ ] Initialiser le pipeline Dagger en Python (`scripts/dagger_ci.py`)
+- [ ] Porter les étapes de Lint (Ruff) et Test (Pytest) sur Dagger
+- [ ] Automatiser le build de l'image Docker via Dagger
+- [ ] Documenter comment lancer la CI localement sans GitHub Actions
+
+### Data Versioning & MLOps Maturity
+- [ ] Initialiser DVC pour le versionning des données/modèles
+- [ ] Configurer un remote storage (S3/GCS) pour DVC
+- [ ] Intégrer Evidently AI pour la détection du drift de données
+- [ ] Ajouter Great Expectations pour la validation de la qualité des données
 
 ### Monitoring de l'infrastructure (Prometheus & Grafana)
 - [ ] Créer des Helm Charts personnalisés pour le déploiement de l'API (`helm/mlops-api/`)
@@ -161,6 +173,13 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
   - [ ] Rate limiting et circuit breaker pour contrôler les coûts LLM
 - [ ] Créer un tableau comparatif coût/performance
 
+### Showcase & Portfolio (GitHub Pages)
+- [ ] Configurer MkDocs avec le thème Material pour une documentation "classe production"
+- [ ] Automatiser le déploiement des rapports de couverture (Pytest HTML) via GitHub Actions
+- [ ] Exporter et héberger la documentation API statique (Swagger/Redoc) pour consultation hors-ligne
+- [ ] Intégrer les schémas d'architecture haute résolution et interactifs dans la documentation
+- [ ] Automatiser l'hébergement des rapports de qualité et de drift (Evidently AI / Great Expectations)
+
 ### Packaging final
 - [ ] Passer en revue et nettoyer l'ensemble du code (dead code, TODOs)
 - [ ] S'assurer que le typage (type hinting) est complet sur chaque fonction
@@ -169,6 +188,31 @@ Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de clas
 - [ ] Ajouter un fichier `CONTRIBUTING.md` (bonnes pratiques, workflow Git)
 - [ ] Vérifier la compatibilité multi-OS (Windows/Linux) via `pathlib`
 - [ ] Préparer un script de démo rapide (`scripts/demo.sh`) pour les présentations
+
+---
+
+## Sprint 6 : Excellence Opérationnelle & AI Reliability
+*Objectif : Atteindre un niveau expert en résilience, évaluation IA et sécurité.*
+
+### Progressive Delivery (Argo Rollouts)
+- [ ] Installer Argo Rollouts sur le cluster minikube
+- [ ] Configurer un déploiement Canary pour l'API (10% -> 50% -> 100%)
+- [ ] Implémenter un AnalysisTemplate pour automatiser le rollback si le taux d'erreur > 1% durant le déploiement
+
+### Évaluation & Guardrails (AI Quality)
+- [ ] Intégrer **Ragas** ou **DeepEval** pour mesurer la "Faithfulness" et "Relevance" des réponses
+- [ ] Mettre en place des **Guardrails AI** pour bloquer les injections de prompts (Prompt Injection)
+- [ ] Automatiser l'étape "LLM-as-a-judge" dans le pipeline CI (Dagger)
+
+### Performance & FinOps Avancé (Caching)
+- [ ] Déployer une instance **Redis** sur Kubernetes via Helm
+- [ ] Implémenter un **Semantic Cache** (via Redis ou GPTCache) pour réduire la latence sur les requêtes identiques
+- [ ] Mesurer et dashboarder (Grafana) l'économie de coût et de latence générée par le cache
+
+### Supply Chain Security (SecOps)
+- [ ] Configurer la signature des images Docker avec **Cosign** dans GitHub Actions
+- [ ] Générer et publier un **SBOM** (Software Bill of Materials) via Syft pour chaque build
+- [ ] Mettre en place un scan de vulnérabilités bloquant (Trivy) pour les dépendances Python et OS
 
 ---
 

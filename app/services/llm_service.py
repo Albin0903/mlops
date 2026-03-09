@@ -32,8 +32,11 @@ SYSTEM_PROMPTS = {
 
 # configuration des modeles par provider (version free tier)
 PROVIDER_MODELS = {
-    "groq": "openai/gpt-oss-120b",
-    "gemini": "gemini-3.1-flash-lite-preview",
+    "groq": "llama-3.1-8b-instant",  # alias par defaut
+    "gemini": "gemini-3.1-flash-lite-preview",  # alias par defaut
+    "instant": "llama-3.1-8b-instant",
+    "medium": "llama-3.3-70b-versatile",
+    "gpt": "openai/gpt-oss-120b",
 }
 
 
@@ -48,10 +51,10 @@ class LLMService:
         return SYSTEM_PROMPTS[mode].format(language=language)
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
-    async def _create_groq_stream(self, prompt: str, system_message: str):
+    async def _create_groq_stream(self, prompt: str, system_message: str, model: str):
         """cree le flux groq (retryable car ne yield pas)"""
         return await self.groq_client.chat.completions.create(
-            model=PROVIDER_MODELS["groq"],
+            model=model,
             messages=[
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt},
@@ -62,11 +65,11 @@ class LLMService:
             stream=True,
         )
 
-    async def _stream_groq(self, prompt: str, system_message: str):
+    async def _stream_groq(self, prompt: str, system_message: str, model: str):
         """generateur de streaming pour groq"""
         input_tokens = 0
         output_tokens = 0
-        stream = await self._create_groq_stream(prompt, system_message)
+        stream = await self._create_groq_stream(prompt, system_message, model)
         async for chunk in stream:
             if hasattr(chunk, "x_groq") and chunk.x_groq and hasattr(chunk.x_groq, "usage"):
                 usage = chunk.x_groq.usage
@@ -76,7 +79,7 @@ class LLMService:
             if chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content, input_tokens, output_tokens
 
-    async def _stream_gemini(self, prompt: str, system_message: str):
+    async def _stream_gemini(self, prompt: str, system_message: str, model: str):
         """generateur de streaming asynchrone pour gemini avec thinking mode"""
         full_prompt = f"{system_message}\n\n{prompt}"
 
@@ -88,7 +91,7 @@ class LLMService:
 
         # utilisation du client asynchrone (aio) pour ne pas bloquer l'event loop
         response = await self.gemini_client.aio.models.generate_content_stream(
-            model=PROVIDER_MODELS["gemini"],
+            model=model,
             contents=full_prompt,
             config=config,
         )
@@ -103,11 +106,15 @@ class LLMService:
     async def get_streaming_response(self, prompt: str, system_message: str, mode: str = "doc", provider: str = "groq"):
         """genere une reponse en streaming avec observabilite langfuse (multi-provider)"""
 
+        # determination du provider reel et du modele
+        model = PROVIDER_MODELS.get(provider, PROVIDER_MODELS["groq"])
+        real_provider = "gemini" if provider == "gemini" or model.startswith("gemini") else "groq"
+
         # verification de la cle api
-        if provider == "groq" and not settings.groq_api_key:
+        if real_provider == "groq" and not settings.groq_api_key:
             yield "erreur : la cle api groq n'est pas configuree dans le fichier .env"
             return
-        if provider == "gemini" and not settings.gemini_api_key:
+        if real_provider == "gemini" and not settings.gemini_api_key:
             yield "erreur : la cle api gemini n'est pas configuree dans le fichier .env"
             return
 
@@ -133,10 +140,10 @@ class LLMService:
 
         try:
             # selection du stream selon le provider
-            if provider == "gemini":
-                stream = self._stream_gemini(prompt, system_message)
+            if real_provider == "gemini":
+                stream = self._stream_gemini(prompt, system_message, model)
             else:
-                stream = self._stream_groq(prompt, system_message)
+                stream = self._stream_groq(prompt, system_message, model)
 
             async for content, in_tok, out_tok in stream:
                 full_response.append(content)
@@ -148,6 +155,15 @@ class LLMService:
             logger.error(f"erreur critique service llm ({provider}) : {e}")
             error_msg = "\n\n[Erreur technique lors de la generation du contenu. Le service a ete interrompu.]"
             full_response.append(error_msg)
+            
+            # metrique d'erreur prometheus
+            try:
+                from prometheus_client import Counter
+                LLM_ERRORS_TOTAL = Counter("llm_errors_total", "nombre total d'erreurs llm", ["provider", "model", "error_type"])
+                LLM_ERRORS_TOTAL.labels(provider=provider, model=model, error_type=type(e).__name__).inc()
+            except:
+                pass
+
             yield error_msg
             
             if langfuse_generation:
@@ -162,6 +178,20 @@ class LLMService:
             f"latency={latency:.2f}s | tokens_in={input_tokens} | "
             f"tokens_out={output_tokens}"
         )
+
+        # metriques prometheus
+        try:
+            from prometheus_client import Counter, Histogram
+            LLM_REQUESTS_TOTAL = Counter("llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"])
+            LLM_TOKENS_TOTAL = Counter("llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"])
+            LLM_LATENCY_SECONDS = Histogram("llm_latency_seconds", "latence des appels llm", ["provider", "model"])
+            
+            LLM_REQUESTS_TOTAL.labels(provider=provider, model=model, mode=mode).inc()
+            LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="input").inc(input_tokens)
+            LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="output").inc(output_tokens)
+            LLM_LATENCY_SECONDS.labels(provider=provider, model=model).observe(latency)
+        except Exception as e:
+            logger.warning(f"erreur lors de la generation des metriques prometheus : {e}")
 
         # mise a jour de la trace langfuse avec tokens et reponse complete
         if langfuse_generation:

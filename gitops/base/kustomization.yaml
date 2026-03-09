@@ -4,3 +4,8 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - prometheus-grafana.yaml
+
+images:
+  - name: ghcr.io/albin0903/mlops
+    newTag: local-dev

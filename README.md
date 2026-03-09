@@ -56,7 +56,7 @@ Cette section décrit comment interagir avec l'API une fois déployée.
 
 ### Accès à l'API
 L'API est accessible via Swagger UI (documentation interactive) :
-- **URL locale :** `http://localhost:8000/docs` (si le port-forward est actif)
+- **URL locale :** `http://localhost:8000/docs` (Activer le tunnel : `kubectl port-forward svc/mlops-api -n mlops 8000:80`)
 - **URL Kubernetes :** `http://mlops-api.local/docs` (via l'Ingress)
 
 ### Endpoints disponibles
@@ -140,6 +140,17 @@ Le projet utilise minikube pour le dev local (zero frais).
 - **Deployer les manifests :** `kubectl apply -f k8s/`
 - **Arreter le cluster :** `minikube stop`
 
+### CI/CD Moderne (Dagger)
+Le projet utilise **Dagger** pour permettre l'exécution du pipeline de CI localement, exactement comme sur GitHub Actions.
+```powershell
+# installer dagger (via pip)
+pip install -r requirements-dev.txt
+
+# lancer la CI locale (lint + tests + build)
+python scripts/dagger_ci.py
+```
+Cela garantit que "si ça passe sur mon PC, ça passera sur la CI".
+
 ### Deploiement GitOps (ArgoCD)
 Le deploiement continu est gere par ArgoCD. Les manifests Kubernetes vivent dans `gitops/` et ArgoCD synchronise automatiquement le cluster avec ce qui est declare dans Git.
 
@@ -160,6 +171,18 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
 Plus de details dans [docs/argocd_gitops.md](docs/argocd_gitops.md).
+
+### Monitoring (Prometheus & Grafana)
+Le monitoring est assuré par Prometheus pour la collecte des métriques et Grafana pour la visualisation.
+
+```powershell
+# deployer la stack de monitoring
+kubectl apply -f k8s/monitoring/prometheus-grafana.yaml
+
+# acceder au dashboard grafana
+kubectl port-forward svc/grafana-service -n mlops 3000:3000
+# ouvrir http://localhost:3000 (admin / admin)
+```
 
 ### Automatisation (Scripts Python)
 ```powershell

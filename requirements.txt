@@ -17,3 +17,5 @@ pydantic-settings>=2.2.0
 
 # resilience
 tenacity==8.2.3
+
+prometheus-fastapi-instrumentator>=7.0.0

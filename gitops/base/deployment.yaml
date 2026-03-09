@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: mlops-api
-          image: ghcr.io/albin0903/mlops:latest
-          imagePullPolicy: Always
+          image: mlops-api:latest
+          imagePullPolicy: Never
           envFrom:
             - secretRef:
                 name: mlops-api-secrets
