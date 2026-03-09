@@ -5,197 +5,133 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-multi--stage-2496ED.svg)](Dockerfile)
 
-## Objectif
-Une API d'analyse de code qui s'appuie sur des LLMs, avec un vrai focus sur l'infra : haute dispo, securite, maitrise des couts et CI/CD moderne. L'idee c'est de montrer un projet MLOps complet, pas juste un wrapper autour d'un modele.
+API d'analyse de code par LLM, avec un vrai focus infra : conteneurisation, CI/CD GitOps, monitoring, resilience et maitrise des couts. Projet MLOps complet, pas juste un wrapper autour d'un modele.
 
-## Pile technique
-- **Langages :** Python 3.13, FastAPI (100% asynchrone)
-- **LLM :** Multi-provider — Groq (GPT-OSS 120B) + Google Gemini (3.1 Flash Lite) avec streaming temps réel
-- **Observabilité LLM :** Langfuse (tracing, tokens, coût par requête)
-- **Infrastructure :** Terraform (modules VPC/IAM), Kubernetes (minikube/EKS)
-- **Résilience :** Tenacity (retry avec backoff exponentiel)
-- **CI/CD :** GitHub Actions (Ruff, Pytest, Trivy, GHCR), ArgoCD (GitOps)
-- **Tests :** Pytest + pytest-cov (99% de couverture)
-- **Sécurité :** Trivy, pre-commit, detect-secrets, Docker non-root
+## Tech Stack
 
-## Architecture du projet
+| Domaine | Outils |
+|---|---|
+| **API** | Python 3.13, FastAPI (100% async), streaming SSE |
+| **LLM** | Multi-provider : Groq (Llama 8b/70b, GPT-OSS 120B) + Google Gemini (Flash Lite) |
+| **Observabilite** | Langfuse (tracing, tokens, cout), Prometheus + Grafana (dashboards as code) |
+| **Infra** | Terraform (VPC/IAM/EKS), Kubernetes (minikube), Docker multi-stage non-root |
+| **CI/CD** | GitHub Actions (Ruff, Pytest, Trivy, GHCR) + ArgoCD (GitOps auto-sync) |
+| **Resilience** | Tenacity (retry backoff exponentiel), multi-provider fallback |
+| **Tests** | Pytest (99% couverture) + Locust (load testing) |
+| **Securite** | Trivy, pre-commit, detect-secrets, Docker non-root |
+
+## Architecture
+
 ```text
 mlops/
-├── app/                          # code source fastapi
+├── app/                          # api fastapi
 │   ├── api/routes/               # endpoints (analysis, health)
 │   ├── core/                     # config centralisee (secrets, env)
 │   ├── schemas/                  # modeles pydantic
 │   └── services/                 # logique metier (llm_service)
-├── gitops/                       # manifests kubernetes (gitops)
+├── gitops/                       # manifests k8s (argocd)
 │   ├── base/                     # deployment, service, ingress
-│   └── overlays/minikube/        # overlay pour l'env local
-├── argocd/applications/          # declaration de l'app argocd
-├── k8s/                          # manifests kubernetes (demo)
+│   └── overlays/minikube/        # overlay env local
+├── k8s/monitoring/               # prometheus + grafana (dashboards as code)
 ├── terraform/modules/            # iac (vpc, iam, cluster)
-├── scripts/                      # automatisation python
-├── docs/                         # documentation technique
-├── Dockerfile                    # multi-stage, non-root
-└── PROGRESS.md                   # suivi du projet
+├── tests/                        # pytest + locustfile
+├── scripts/                      # dagger ci, manage_infra, test_streaming
+├── .github/workflows/ci.yml      # pipeline ci 4 jobs
+└── Dockerfile                    # multi-stage, non-root, healthcheck
 ```
 
-## Fonctionnalites
-- **Multi-provider :** Groq et Gemini selectionnables via le parametre `provider`.
-- **Generation de doc :** soumet du code, recois une doc Markdown structuree en streaming.
-- **Q&A sur documents :** pose une question sur un fichier technique, obtiens une reponse argumentee.
-- **Streaming SSE :** les reponses arrivent chunk par chunk en temps reel.
-- **Tracing LLM :** chaque appel est trace dans Langfuse (tokens, cout, latence).
-- **FinOps :** prompts optimises, cout calcule par requete.
-- **Resilience :** retry avec backoff exponentiel sur erreurs reseau.
-- **Securite :** image Docker non-root, secrets via `.env`, scan pre-commit.
-- **CI/CD :** GitHub Actions (Ruff, Pytest, Trivy, GHCR) + ArgoCD pour le deploiement GitOps.
+## Quick Start
 
----
+```powershell
+# 1. prerequis : docker desktop, minikube, kubectl
 
-## Guide utilisateur (User)
-Cette section décrit comment interagir avec l'API une fois déployée.
+# 2. lancer le cluster
+minikube start --driver=docker
+minikube addons enable ingress
 
-### Accès à l'API
-L'API est accessible via Swagger UI (documentation interactive) :
-- **URL locale :** `http://localhost:8000/docs` (Activer le tunnel : `kubectl port-forward svc/mlops-api -n mlops 8000:80`)
-- **URL Kubernetes :** `http://mlops-api.local/docs` (via l'Ingress)
+# 3. build + deploy
+docker build -t mlops-api:latest .
+minikube image load mlops-api:latest
+kubectl apply -f gitops/base/ -n mlops
+kubectl apply -f k8s/monitoring/ -n mlops
 
-### Endpoints disponibles
+# 4. port-forward (dans des terminaux separes)
+kubectl port-forward svc/mlops-api -n mlops 8000:80
+kubectl port-forward svc/grafana-service -n mlops 3000:3000
 
-| Méthode | Route | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | Vérification que l'API est opérationnelle |
-| `GET` | `/health/` | Statut de santé et version |
-| `POST` | `/analyze/` | Analyse de code ou question sur document (streaming) |
+# 5. tester
+curl http://localhost:8000/health/
+```
 
-### Exemples d'utilisation
+## Utilisation
 
-**Générer la documentation d'une fonction :**
+**Generer la doc d'une fonction :**
 ```bash
 curl -N -X POST "http://localhost:8000/analyze/" \
   -H "Content-Type: application/json" \
-  -d '{"content": "def fibonacci(n: int) -> int:\n    if n <= 1: return n\n    return fibonacci(n-1) + fibonacci(n-2)", "language": "python", "mode": "doc"}'
+  -d '{"content": "def fib(n): return n if n<=1 else fib(n-1)+fib(n-2)", "language": "python", "mode": "doc"}'
 ```
 
 **Poser une question sur un document :**
 ```bash
 curl -N -X POST "http://localhost:8000/analyze/" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Le projet utilise Terraform et minikube.", "language": "text", "mode": "question", "question": "Quels outils sont utilisés ?"}'
+  -d '{"content": "Le projet utilise Terraform et K8s.", "language": "text", "mode": "question", "question": "Quels outils IaC ?"}'
 ```
 
-**Vérification de santé :**
+**Choisir un modele specifique :**
 ```bash
-curl -X GET "http://localhost:8000/health/"
+# providers : groq (defaut), gemini, instant (llama 8b), medium (llama 70b), gpt (120b)
+curl -N -X POST "http://localhost:8000/analyze/" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "class Db: pass", "language": "python", "mode": "doc", "provider": "gemini"}'
 ```
 
----
+## Monitoring
 
-## Guide développeur (Dev)
-Cette section détaille les commandes nécessaires pour maintenir et faire évoluer l'infrastructure.
+- **Grafana** : `http://localhost:3000` (admin / admin)
+- **Prometheus** : collecte automatique via `prometheus-fastapi-instrumentator`
+- **Metriques custom** : `llm_requests_total`, `llm_tokens_total`, `llm_latency_seconds`, `llm_errors_total`
 
-### Environnement local
+## Tests de charge
+
 ```powershell
-# activer l'environnement virtuel
-.venv\Scripts\Activate.ps1
-
-# installer les dependances
-pip install -r requirements.txt
+# installer locust
 pip install -r requirements-dev.txt
 
-# configurer la securite
-pre-commit install
-
-# lancer l'api en mode developpement
-uvicorn app.main:app --reload
+# lancer le benchmark (1 min, 50% de la charge max des quotas)
+locust -f tests/locustfile.py --host http://localhost:8000 --users 5 --spawn-rate 1 --run-time 1m --headless
 ```
 
-### Configuration des secrets
-Créer un fichier `.env` à la racine du projet :
+## CI/CD
+
+Pipeline GitHub Actions en 4 jobs paralleles :
+1. **Lint** : `ruff check` + `ruff format --check`
+2. **Tests** : `pytest` avec couverture (seuil 70%)
+3. **Security** : scan Trivy (CRITICAL + HIGH)
+4. **Build & Push** : image Docker vers GHCR (main uniquement)
+
+Deploiement continu via **ArgoCD** (auto-sync depuis `gitops/base/`).
+
+## Configuration
+
+Creer un fichier `.env` a la racine :
 ```dotenv
-groq_api_key=gsk_votre_cle_ici
-gemini_api_key=votre_cle_gemini
-aws_id_key=votre_cle_aws
-aws_secret_key=votre_secret_aws
+groq_api_key=gsk_xxx
+gemini_api_key=xxx
 langfuse_public_key=pk-lf-xxx
 langfuse_secret_key=sk-lf-xxx
 ```
 
-### Validation du streaming
-Un script de test asynchrone est disponible pour valider que le streaming fonctionne correctement :
-```powershell
-python scripts/test_streaming.py
-```
-Si le nombre de chunks reçus est supérieur à 1, le streaming est validé.
-
-### Infrastructure (Terraform)
-Toutes les commandes doivent être lancées depuis le dossier `terraform/`.
-- **Initialiser :** `terraform init`
-- **Vérifier les changements :** `terraform plan`
-- **Déployer le réseau/IAM :** `terraform apply`
-
-### Kubernetes (minikube)
-Le projet utilise minikube pour le dev local (zero frais).
-- **Demarrer le cluster :** `minikube start --driver=docker`
-- **Activer l'Ingress :** `minikube addons enable ingress`
-- **Deployer les manifests :** `kubectl apply -f k8s/`
-- **Arreter le cluster :** `minikube stop`
-
-### CI/CD Moderne (Dagger)
-Le projet utilise **Dagger** pour permettre l'exécution du pipeline de CI localement, exactement comme sur GitHub Actions.
-```powershell
-# installer dagger (via pip)
-pip install -r requirements-dev.txt
-
-# lancer la CI locale (lint + tests + build)
-python scripts/dagger_ci.py
-```
-Cela garantit que "si ça passe sur mon PC, ça passera sur la CI".
-
-### Deploiement GitOps (ArgoCD)
-Le deploiement continu est gere par ArgoCD. Les manifests Kubernetes vivent dans `gitops/` et ArgoCD synchronise automatiquement le cluster avec ce qui est declare dans Git.
+## Dev Setup
 
 ```powershell
-# installer argocd sur le cluster (une seule fois)
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# declarer l'application
-kubectl apply -f argocd/applications/mlops.yaml
-
-# verifier le statut
-kubectl get applications -n argocd
-
-# acceder a l'interface web
-kubectl port-forward svc/argocd-server -n argocd 8080:443
-# puis ouvrir https://localhost:8080
-```
-
-Plus de details dans [docs/argocd_gitops.md](docs/argocd_gitops.md).
-
-### Monitoring (Prometheus & Grafana)
-Le monitoring est assuré par Prometheus pour la collecte des métriques et Grafana pour la visualisation.
-
-```powershell
-# deployer la stack de monitoring
-kubectl apply -f k8s/monitoring/prometheus-grafana.yaml
-
-# acceder au dashboard grafana
-kubectl port-forward svc/grafana-service -n mlops 3000:3000
-# ouvrir http://localhost:3000 (admin / admin)
-```
-
-### Automatisation (Scripts Python)
-```powershell
-# deployer l'infrastructure terraform
-python scripts/manage_infra.py up --yes
-
-# deployer les manifests kubernetes
-python scripts/manage_infra.py deploy
-
-# detruire l'infrastructure (finops)
-python scripts/manage_infra.py down --yes
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dev.txt
+pre-commit install
+uvicorn app.main:app --reload
 ```
 
 ---
 
-> Ce projet est en developpement actif. [Suivre l'avancement](PROGRESS.md) | [Standards du projet](docs/engineering_standards.md)
+[Suivi du projet](PROGRESS.md) | [Backlog](TODO.md) | [Standards](docs/engineering_standards.md) | [GitOps](docs/argocd_gitops.md)

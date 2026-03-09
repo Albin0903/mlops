@@ -1,227 +1,176 @@
 # Feuille de route et suivi de projet
 
-Ce document suit le plan pour construire une infrastructure MLOps/LLMOps de classe production.
+Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente un domaine de competences cible pour un profil MLOps / DevOps / AI Engineer.
 
 ---
 
 ## Sprint 1 : Infrastructure Cloud & IaC
-*Objectif : Prouver ses compétences en ingénierie cloud avec Terraform et Kubernetes.*
+*Competences visees : Terraform, Kubernetes, Cloud Architecture*
 
-### Fondations & bootstrap
-- [x] Créer un compte Cloud (GCP/AWS/Azure) et configurer le CLI (gcloud/aws/az)
-- [x] Créer manuellement un bucket de stockage (GCS/S3) pour le backend Terraform
-- [x] Configurer le `backend.tf` pour utiliser le bucket distant
-- [x] Initialiser la structure modulaire : `terraform/modules/{vpc, cluster}`
+### Terraform (modules)
+- [x] Structure modulaire : `terraform/modules/{vpc, iam, cluster}`
+- [x] Backend S3 distant pour l'etat Terraform
+- [x] Module VPC : reseau, sous-reseaux prives/publics
+- [x] Module IAM : Service Account avec privileges restreints
+- [x] Module Cluster : provisionnement EKS (code valide)
+- [x] Migration vers minikube (local) pour eviter les couts EKS (~70$/mois)
 
-### Réseau & cluster K8s (IaC)
-- [x] Module VPC : Définir le réseau, les sous-réseaux privés et publics
-- [x] Module IAM : Créer un Service Account avec privilèges restreints pour le cluster
-- [x] Module Cluster : Provisionnement EKS (code terraform écrit et validé)
-- [x] Exécuter `terraform apply` et vérifier la création via la console Cloud
-- [x] Configurer `outputs.tf` pour extraire l'IP et les certificats du cluster
-- [x] Migration vers minikube (local) pour éviter les coûts EKS (~70$/mois)
-
-### Kubernetes & connectivité (Masterclass)
-- [x] Démarrer minikube et configurer le contexte kubectl
-- [x] Déployer un Ingress Controller (NGINX) via Helm
-- [x] Créer et déployer les manifests `k8s/hello-world.yaml` (Deployment, Service ClusterIP, Ingress)
-- [x] Créer un `Dockerfile` professionnel (Multi-stage, Non-root, .dockerignore)
-- [x] Finaliser le script Python `scripts/manage_infra.py` pour automatiser `apply` et `destroy`
+### Kubernetes
+- [x] Cluster minikube + contexte kubectl
+- [x] Ingress Controller NGINX
+- [x] Manifests de deploiement (Deployment, Service, Ingress)
+- [x] Dockerfile multi-stage, non-root, healthcheck
+- [x] Script d'automatisation `scripts/manage_infra.py`
 
 ---
 
 ## Sprint 2 : Application LLM & DevSecOps
-*Objectif : Développer un code Python robuste, optimisé et sécurisé.*
+*Competences visees : Python async, LLM integration, testing, securite*
 
-### FastAPI & intégration LLM
-- [x] Initialiser le projet FastAPI avec des gestionnaires `async def`
-- [x] Intégrer l'API Groq (Llama 3.3 70B) en streaming asynchrone
-- [x] Intégrer l'API Gemini (gemini-3.1-flash-lite) en tant que provider alternatif
-- [x] Implémenter des tentatives (Retries) avec backoff exponentiel (Résilience)
-- [x] Ajouter des modèles Pydantic stricts pour la validation entrée/sortie
-- [x] Optimiser les system prompts pour réduire la consommation de tokens
-- [x] Créer un script de test streaming asynchrone (`scripts/test_streaming.py`)
+### FastAPI & LLM
+- [x] API FastAPI 100% async avec streaming SSE
+- [x] Groq : multi-modele (Llama 8b instant, 70b versatile, GPT-OSS 120b)
+- [x] Gemini : gemini-3.1-flash-lite avec Thinking Mode
+- [x] Routing dynamique par provider (`instant`, `medium`, `gpt`, `gemini`)
+- [x] Retry avec backoff exponentiel (Tenacity)
+- [x] Prompts systeme optimises (reduction tokens ~30%)
+- [x] Validation stricte avec Pydantic
 
-### Conteneurisation avancée
-- [x] Écrire un Dockerfile multi-étapes (taille optimisée)
-- [x] Implémenter la sécurité avec un utilisateur non-root dans Docker
-- [x] Configurer le fichier `.dockerignore`
+### Conteneurisation
+- [x] Dockerfile multi-etapes (builder + runtime)
+- [x] Utilisateur non-root, .dockerignore, labels OCI
+- [x] HEALTHCHECK integre
 
-### Observabilité LLM (Langfuse)
-- [x] Intégrer le SDK Langfuse dans `app/services/llm_service.py`
-- [x] Logger les prompts, les réponses et la latence de chaque appel LLM
-- [x] Suivre l'utilisation des tokens (entrée/sortie) et calcul du coût par requête
-- [x] Créer des traces nommées pour chaque endpoint (`/analyze/doc`, `/analyze/question`)
-- [ ] Ajouter un screenshot du dashboard Langfuse dans le README
+### Observabilite LLM (Langfuse)
+- [x] Tracing des prompts, reponses et latence
+- [x] Suivi tokens (entree/sortie) et cout par requete
+- [x] Traces nommees par endpoint et provider
 
-### Tests automatisés (Pytest)
-- [x] Configurer `pytest` et `pytest-cov` dans `requirements-dev.txt`
-- [x] Écrire les tests des endpoints FastAPI avec `httpx.AsyncClient` (`tests/test_api.py`)
-- [x] Écrire les tests du service LLM avec mocking de l'API Groq (`tests/test_llm_service.py`)
-- [x] Écrire les tests de validation des schémas Pydantic (`tests/test_schemas.py`)
-- [x] Écrire les tests du health check et de la configuration (`tests/test_health.py`)
-- [x] Atteindre un taux de couverture ≥ 70% (99% atteint)
-- [x] Ajouter un badge de couverture dans le README
+### Tests automatises (Pytest)
+- [x] Configuration pytest + pytest-cov
+- [x] Tests endpoints avec `httpx.AsyncClient`
+- [x] Tests service LLM avec mocking
+- [x] Tests schemas Pydantic
+- [x] Tests health check et config
+- [x] Couverture : 99%
 
 ---
 
 ## Sprint 3 : CI/CD moderne & GitOps
-*Objectif : Passer des déploiements "push" vers le "GitOps" (pull).*
+*Competences visees : GitHub Actions, ArgoCD, Git Flow*
 
-### Intégration continue (CI) — GitHub Actions
-- [x] Configurer le workflow `.github/workflows/ci.yml`
-  - [x] Étape : Linting avec Ruff (vérification de style et erreurs)
-  - [x] Étape : Tests unitaires avec Pytest + couverture
-  - [x] Étape : Scan de sécurité de l'image Docker avec Trivy
-  - [x] Étape : Build & push de l'image vers GHCR (GitHub Container Registry)
-- [x] Ajouter des badges CI (build status, coverage, security) dans le README
+### CI GitHub Actions
+- [x] 4 jobs paralleles : Lint (Ruff) | Tests (Pytest) | Security (Trivy) | Build & Push (GHCR)
+- [x] Cache pip et Docker layers (GHA cache)
+- [x] Build conditionnel (GHCR sur main uniquement)
+- [x] Badges CI dans le README
 
-### Workflow Git professionnel
-- [x] Créer la branche `develop` depuis `main`
-- [x] Adopter un workflow Git Flow simplifié (`main` → `develop` → `feature/*`)
-- [x] Créer des Pull Requests pour chaque feature (historique visible par les recruteurs)
-- [x] Configurer des règles de protection sur `main` (review requise, CI verte)
+### Workflow Git
+- [x] Git Flow simplifie (main -> develop -> feature/*)
+- [x] Pull Requests avec review obligatoire
+- [x] Protection de la branche main
 
-### Deploiement continu (CD) avec ArgoCD
-- [x] Installer ArgoCD sur le cluster Kubernetes (minikube)
-- [x] Creer les manifests GitOps (`gitops/base/`, `gitops/overlays/minikube/`)
-- [x] Connecter ArgoCD au repo pour la synchronisation automatique (auto-sync + self-heal)
-- [x] Documenter le flux GitOps (`docs/argocd_gitops.md`)
-- [ ] Optionnel : separer le dossier GitOps dans un repo dedie
-- [ ] Implementer une logique de deploiement Blue/Green ou Canary
-- [ ] Ajouter un schema du flux GitOps (draw.io)
+### GitOps ArgoCD
+- [x] Manifests GitOps (`gitops/base/`, `gitops/overlays/minikube/`)
+- [x] Auto-sync + self-heal
+- [x] Documentation (`docs/argocd_gitops.md`)
+- [ ] Schema du flux GitOps (Excalidraw/draw.io)
+- [ ] Strategie Blue/Green ou Canary (Argo Rollouts)
 
-### Environnement de développement (.devcontainer)
-- [x] Créer `.devcontainer/devcontainer.json` (VS Code / GitHub Codespaces)
-- [x] Configurer les extensions pré-installées (Python, Ruff, Docker)
-- [x] Ajouter un `postCreateCommand` pour installer les dépendances automatiquement
-- [ ] Tester le lancement en un clic via Codespaces
+### Environnement de dev (.devcontainer)
+- [x] Configuration VS Code / GitHub Codespaces
+- [x] Extensions pre-installees, `postCreateCommand`
+- [ ] Validation sur Codespaces
 
 ---
 
-## Sprint 4 : CI/CD 2.0 & Monitoring Avancé
-*Objectif : Excellence opérationnelle avec Dagger, DVC et monitoring de drift.*
+## Sprint 4 : Monitoring & Load Testing
+*Competences visees : Prometheus, Grafana, SRE, performance engineering*
 
-### CI/CD "Local-first" (Dagger)
-- [ ] Initialiser le pipeline Dagger en Python (`scripts/dagger_ci.py`)
-- [ ] Porter les étapes de Lint (Ruff) et Test (Pytest) sur Dagger
-- [ ] Automatiser le build de l'image Docker via Dagger
-- [ ] Documenter comment lancer la CI localement sans GitHub Actions
-
-### Data Versioning & MLOps Maturity
-- [ ] Initialiser DVC pour le versionning des données/modèles
-- [ ] Configurer un remote storage (S3/GCS) pour DVC
-- [ ] Intégrer Evidently AI pour la détection du drift de données
-- [ ] Ajouter Great Expectations pour la validation de la qualité des données
-
-### Monitoring de l'infrastructure (Prometheus & Grafana)
-- [ ] Créer des Helm Charts personnalisés pour le déploiement de l'API (`helm/mlops-api/`)
-- [ ] Déployer Prometheus via Helm Charts sur minikube
-- [ ] Déployer Grafana via Helm Charts sur minikube
-- [ ] Instrumenter FastAPI avec `prometheus-fastapi-instrumentator` (métriques HTTP)
-- [ ] Créer des métriques custom : latence LLM, tokens consommés, coût par requête
-- [ ] Créer des tableaux de bord Grafana :
-  - [ ] Dashboard infra : CPU/RAM, requêtes/sec, taux de 4xx/5xx, latence P50/P95/P99
-  - [ ] Dashboard LLM : tokens in/out, coût cumulé, latence par modèle
-- [ ] Configurer des alertes Prometheus (ex : latence P95 > 5s, taux d'erreur > 5%)
-- [ ] Ajouter un screenshot des dashboards dans le README
-
-### MLflow — Tracking d'expériences
-- [ ] Déployer un serveur MLflow (local ou conteneurisé)
-- [ ] Intégrer MLflow dans le service LLM pour tracker les expériences
-  - [ ] Logger les paramètres : modèle, temperature, max_tokens, system prompt
-  - [ ] Logger les métriques : latence, tokens utilisés, coût
-  - [ ] Logger les artefacts : exemples de prompts/réponses
-- [ ] Créer des expériences pour comparer différentes configurations de prompts
-- [ ] Documenter l'utilisation de MLflow dans le README
+### Monitoring (Prometheus & Grafana)
+- [x] Deployment Prometheus + Grafana sur K8s
+- [x] Instrumentation FastAPI (`prometheus-fastapi-instrumentator`)
+- [x] Metriques custom LLM : `llm_requests_total`, `llm_tokens_total`, `llm_latency_seconds`, `llm_errors_total`
+- [x] Dashboard Grafana as Code (ConfigMap versionne)
+- [x] Dashboard : total HTTP requests, status codes, latence moyenne, request rate
+- [ ] Dashboard : quotas LLM (RPM/TPD restants par modele)
+- [ ] Alerting Prometheus (latence P95 > 5s, taux erreur > 5%)
+- [ ] Logs centralises (Loki/Promtail)
 
 ### Tests de charge (Locust)
-- [ ] Créer un fichier `locustfile.py` pour simuler du trafic sur l'API
-- [ ] Définir des scénarios de test :
-  - [ ] Scénario 1 : Montée en charge progressive (10 → 100 utilisateurs)
-  - [ ] Scénario 2 : Pic de trafic (burst de 200 requêtes)
-  - [ ] Scénario 3 : Endurance (charge constante pendant 30 min)
-- [ ] Identifier les goulots d'étranglement (latence, erreurs, saturation)
-- [ ] Documenter les résultats avec graphiques (Locust dashboard) dans le README
-- [ ] Ajuster la configuration (workers, replicas, rate limiting) en conséquence
+- [x] Fichier `tests/locustfile.py` avec scenarios multi-provider
+- [x] Benchmark 50% charge max, respect des quotas free tier
+- [x] Resultats : Groq Instant ~264ms (0% erreur), Gemini ~4s (28% erreur)
+- [ ] Scenarios avances : montee en charge progressive, burst, endurance
+- [ ] Rapport HTML automatise dans la CI
+- [ ] Ajustement replicas/rate limiting en fonction des resultats
 
 ---
 
-## Sprint 5 : Valorisation & Portfolio
-*Objectif : Documentation professionnelle et packaging du projet pour le CV.*
+## Sprint 5 : CI locale & Automatisation
+*Competences visees : Dagger, DX, productivite*
 
-### Documentation technique
-- [ ] Rédiger le README.md complet en anglais (version portfolio internationale)
-- [ ] Créer un schéma d'architecture professionnel (Excalidraw/Draw.io)
-  - [ ] Vue globale : flux de données end-to-end (user → API → LLM → response)
-  - [ ] Vue infra : Terraform → K8s → ArgoCD → Monitoring
-- [ ] Documenter les compromis techniques (design decisions) :
-  - [ ] FastAPI vs Flask (performance async, typing natif)
-  - [ ] Groq vs OpenAI (latence, coût, open-source)
-  - [ ] ArgoCD vs GitHub Actions CD (GitOps vs push-based)
-  - [ ] Minikube vs EKS (coût vs production-readiness)
+### CI locale (Dagger)
+- [x] Script `scripts/dagger_ci.py` (lint + test + build)
+- [ ] Validation complete et documentation
+- [ ] Integration dans le workflow de dev quotidien
 
-### Rapport FinOps
-- [ ] Calculer le coût mensuel de la stack en production (AWS EKS)
-  - [ ] Cluster EKS : compute, networking, storage
-  - [ ] API LLM : coût par requête, projection mensuelle
-  - [ ] Monitoring : stockage Prometheus, rétention Grafana
-- [ ] Documenter les stratégies d'optimisation implémentées :
-  - [ ] Migration EKS → minikube pour le dev (économie ~70$/mois)
-  - [ ] Optimisation des prompts (réduction tokens de ~30%)
-  - [ ] `terraform destroy` automatique après chaque session
-  - [ ] Rate limiting et circuit breaker pour contrôler les coûts LLM
-- [ ] Créer un tableau comparatif coût/performance
-
-### Showcase & Portfolio (GitHub Pages)
-- [ ] Configurer MkDocs avec le thème Material pour une documentation "classe production"
-- [ ] Automatiser le déploiement des rapports de couverture (Pytest HTML) via GitHub Actions
-- [ ] Exporter et héberger la documentation API statique (Swagger/Redoc) pour consultation hors-ligne
-- [ ] Intégrer les schémas d'architecture haute résolution et interactifs dans la documentation
-- [ ] Automatiser l'hébergement des rapports de qualité et de drift (Evidently AI / Great Expectations)
-
-### Packaging final
-- [ ] Passer en revue et nettoyer l'ensemble du code (dead code, TODOs)
-- [ ] S'assurer que le typage (type hinting) est complet sur chaque fonction
-- [ ] Vérifier que chaque module a une docstring claire
-- [ ] Créer un `Makefile` ou un `justfile` pour les commandes courantes
-- [ ] Ajouter un fichier `CONTRIBUTING.md` (bonnes pratiques, workflow Git)
-- [ ] Vérifier la compatibilité multi-OS (Windows/Linux) via `pathlib`
-- [ ] Préparer un script de démo rapide (`scripts/demo.sh`) pour les présentations
+### Automatisation des processus
+- [ ] Makefile/Justfile : `make dev`, `make deploy`, `make benchmark`, `make monitoring`
+- [ ] Script de demo rapide (`scripts/demo.sh`)
+- [ ] Script one-command : build + load + deploy + port-forward
+- [ ] Pre-commit : ajouter validation des manifests K8s (kubeval/kubeconform)
 
 ---
 
-## Sprint 6 : Excellence Opérationnelle & AI Reliability
-*Objectif : Atteindre un niveau expert en résilience, évaluation IA et sécurité.*
+## Sprint 6 : Excellence Operationnelle & AI Reliability
+*Competences visees : AI safety, caching, supply chain security*
 
-### Progressive Delivery (Argo Rollouts)
-- [ ] Installer Argo Rollouts sur le cluster minikube
-- [ ] Configurer un déploiement Canary pour l'API (10% -> 50% -> 100%)
-- [ ] Implémenter un AnalysisTemplate pour automatiser le rollback si le taux d'erreur > 1% durant le déploiement
+### Performance & FinOps (Caching)
+- [ ] Redis sur Kubernetes (Helm)
+- [ ] Semantic Cache (requetes identiques = pas de re-appel LLM)
+- [ ] Dashboard Grafana : economie cout/latence via cache
+- [ ] Rapport FinOps : comparatif EKS vs minikube, cout par requete
 
-### Évaluation & Guardrails (AI Quality)
-- [ ] Intégrer **Ragas** ou **DeepEval** pour mesurer la "Faithfulness" et "Relevance" des réponses
-- [ ] Mettre en place des **Guardrails AI** pour bloquer les injections de prompts (Prompt Injection)
-- [ ] Automatiser l'étape "LLM-as-a-judge" dans le pipeline CI (Dagger)
-
-### Performance & FinOps Avancé (Caching)
-- [ ] Déployer une instance **Redis** sur Kubernetes via Helm
-- [ ] Implémenter un **Semantic Cache** (via Redis ou GPTCache) pour réduire la latence sur les requêtes identiques
-- [ ] Mesurer et dashboarder (Grafana) l'économie de coût et de latence générée par le cache
+### AI Quality & Guardrails
+- [ ] Guardrails AI : blocage injection de prompts
+- [ ] Prompt versioning (Langfuse experiments)
+- [ ] LLM-as-a-judge dans la CI (DeepEval/Ragas)
 
 ### Supply Chain Security (SecOps)
-- [ ] Configurer la signature des images Docker avec **Cosign** dans GitHub Actions
-- [ ] Générer et publier un **SBOM** (Software Bill of Materials) via Syft pour chaque build
-- [ ] Mettre en place un scan de vulnérabilités bloquant (Trivy) pour les dépendances Python et OS
+- [ ] Signature des images Docker (Cosign) dans GitHub Actions
+- [ ] SBOM (Software Bill of Materials) via Syft
+- [ ] Migration secrets : `.env` -> HashiCorp Vault / External Secrets Operator
+
+### Progressive Delivery
+- [ ] Argo Rollouts : deploiement Canary (10% -> 50% -> 100%)
+- [ ] AnalysisTemplate : rollback auto si taux erreur > 1%
 
 ---
 
-## Tâches récurrentes et bonnes pratiques
-- [ ] **FinOps :** S'assurer que `terraform destroy` est lancé après chaque session
-- [ ] **Sécurité :** Aucun secret dans Git (utiliser Secrets Manager / GitHub Secrets)
-- [ ] **Qualité du code :** Typage (type hinting) et documentation pour chaque fonction
-- [ ] **Compatibilité :** Garantir le fonctionnement multi-OS (Windows/Linux) via `pathlib`
-- [ ] **Linting :** Exécution systématique de Ruff avant chaque commit
-- [ ] **Infrastructure :** Validation des fichiers Terraform avec `terraform validate`
-- [ ] **Kubernetes :** Utilisation de Helm pour structurer les déploiements complexes
-- [ ] **Git :** Commits atomiques avec messages conventionnels (`feat:`, `fix:`, `docs:`, `ci:`)
+## Sprint 7 : Valorisation & Portfolio
+*Competences visees : communication technique, documentation pro*
+
+### Documentation
+- [ ] README en anglais (version portfolio internationale)
+- [ ] Schema d'architecture (Excalidraw)
+- [ ] Compromis techniques documentes (FastAPI vs Flask, Groq vs OpenAI, etc.)
+
+### Showcase
+- [ ] MkDocs + GitHub Pages (Material theme)
+- [ ] Export Swagger/Redoc statique
+- [ ] Screenshots Grafana + Langfuse dans le README
+
+### Packaging
+- [ ] Nettoyage code (dead code, TODOs, type hints complets)
+- [ ] `CONTRIBUTING.md`
+- [ ] Compatibilite multi-OS verifiee (`pathlib`)
+
+---
+
+## Bonnes pratiques recurrentes
+- [ ] FinOps : `terraform destroy` apres chaque session
+- [ ] Securite : zero secret dans Git
+- [ ] Qualite : type hints + docstrings sur chaque fonction
+- [ ] Git : commits atomiques (`feat:`, `fix:`, `docs:`, `ci:`)
+- [ ] Linting : Ruff avant chaque commit (pre-commit)
