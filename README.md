@@ -5,151 +5,133 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-multi--stage-2496ED.svg)](Dockerfile)
 
-## Objectif
-Concevoir, déployer et monitorer une API d'analyse de code alimentée par des LLMs. Ce projet met l'accent sur l'**excellence de l'infrastructure** (haute disponibilité, sécurité, maitrise des coûts, CI/CD moderne) plutôt que sur la seule performance du modèle d'IA.
+API d'analyse de code par LLM, avec un vrai focus infra : conteneurisation, CI/CD GitOps, monitoring, resilience et maitrise des couts. Projet MLOps complet, pas juste un wrapper autour d'un modele.
 
-## Pile technique
-- **Langages :** Python 3.13, FastAPI (100% asynchrone)
-- **LLM :** Multi-provider — Groq (GPT-OSS 120B) + Google Gemini (3.1 Flash Lite) avec streaming temps réel
-- **Observabilité LLM :** Langfuse (tracing, tokens, coût par requête)
-- **Infrastructure :** Terraform (modules VPC/IAM), Kubernetes (minikube/EKS)
-- **Résilience :** Tenacity (retry avec backoff exponentiel)
-- **CI/CD :** GitHub Actions (Ruff, Pytest, Trivy, GHCR), ArgoCD (GitOps)
-- **Tests :** Pytest + pytest-cov (99% de couverture)
-- **Sécurité :** Trivy, pre-commit, detect-secrets, Docker non-root
+## Tech Stack
 
-## Architecture du projet
+| Domaine | Outils |
+|---|---|
+| **API** | Python 3.13, FastAPI (100% async), streaming SSE |
+| **LLM** | Multi-provider : Groq (Llama 8b/70b, GPT-OSS 120B) + Google Gemini (Flash Lite) |
+| **Observabilite** | Langfuse (tracing, tokens, cout), Prometheus + Grafana (dashboards as code) |
+| **Infra** | Terraform (VPC/IAM/EKS), Kubernetes (minikube), Docker multi-stage non-root |
+| **CI/CD** | GitHub Actions (Ruff, Pytest, Trivy, GHCR) + ArgoCD (GitOps auto-sync) |
+| **Resilience** | Tenacity (retry backoff exponentiel), multi-provider fallback |
+| **Tests** | Pytest (99% couverture) + Locust (load testing) |
+| **Securite** | Trivy, pre-commit, detect-secrets, Docker non-root |
+
+## Architecture
+
 ```text
 mlops/
-├── app/                          # code source de l'api (fastapi)
+├── app/                          # api fastapi
 │   ├── api/routes/               # endpoints (analysis, health)
-│   ├── core/                     # configuration centralisee (secrets, env)
-│   ├── schemas/                  # contrats de donnees (pydantic)
+│   ├── core/                     # config centralisee (secrets, env)
+│   ├── schemas/                  # modeles pydantic
 │   └── services/                 # logique metier (llm_service)
-├── k8s/                          # manifestes kubernetes
-├── terraform/modules/            # infrastructure as code (vpc, iam, cluster)
-├── scripts/                      # automatisation (manage_infra, test_streaming)
-├── Dockerfile                    # multi-stage build, utilisateur non-root
-├── requirements.txt              # dependances production
-└── PROGRESS.md                   # suivi du projet (24 semaines)
+├── gitops/                       # manifests k8s (argocd)
+│   ├── base/                     # deployment, service, ingress
+│   └── overlays/minikube/        # overlay env local
+├── k8s/monitoring/               # prometheus + grafana (dashboards as code)
+├── terraform/modules/            # iac (vpc, iam, cluster)
+├── tests/                        # pytest + locustfile
+├── scripts/                      # dagger ci, manage_infra, test_streaming
+├── .github/workflows/ci.yml      # pipeline ci 4 jobs
+└── Dockerfile                    # multi-stage, non-root, healthcheck
 ```
 
-## Fonctionnalités
-- **Architecture multi-provider :** Groq et Gemini disponibles via un paramètre `provider` dans chaque requête.
-- **Génération de documentation :** Soumettez du code source et recevez une documentation Markdown structurée en streaming.
-- **Questions sur documents :** Posez des questions précises sur un fichier technique et obtenez une réponse raisonnée.
-- **Streaming temps réel :** Les réponses du LLM sont envoyées chunk par chunk via Server-Sent Events.
-- **Observabilité LLM :** Chaque appel est tracé dans Langfuse (prompt, réponse, tokens, coût, latence).
-- **Gestion des coûts :** Prompts systèmes optimisés et calcul du coût par requête (FinOps).
-- **Résilience :** Retry automatique avec backoff exponentiel en cas d'erreur réseau.
-- **Sécurité :** Image Docker non-root, secrets injectés via `.env`, scan pre-commit.
-- **CI/CD :** Pipeline GitHub Actions (Ruff, Pytest, Trivy, GHCR) déclenché sur chaque push.
+## Quick Start
 
----
+```powershell
+# 1. prerequis : docker desktop, minikube, kubectl
 
-## Guide utilisateur (User)
-Cette section décrit comment interagir avec l'API une fois déployée.
+# 2. lancer le cluster
+minikube start --driver=docker
+minikube addons enable ingress
 
-### Accès à l'API
-L'API est accessible via Swagger UI (documentation interactive) :
-- **URL locale :** `http://localhost:8000/docs` (si le port-forward est actif)
-- **URL Kubernetes :** `http://mlops-api.local/docs` (via l'Ingress)
+# 3. build + deploy
+docker build -t mlops-api:latest .
+minikube image load mlops-api:latest
+kubectl apply -f gitops/base/ -n mlops
+kubectl apply -f k8s/monitoring/ -n mlops
 
-### Endpoints disponibles
+# 4. port-forward (dans des terminaux separes)
+kubectl port-forward svc/mlops-api -n mlops 8000:80
+kubectl port-forward svc/grafana-service -n mlops 3000:3000
 
-| Méthode | Route | Description |
-| :--- | :--- | :--- |
-| `GET` | `/` | Vérification que l'API est opérationnelle |
-| `GET` | `/health/` | Statut de santé et version |
-| `POST` | `/analyze/` | Analyse de code ou question sur document (streaming) |
+# 5. tester
+curl http://localhost:8000/health/
+```
 
-### Exemples d'utilisation
+## Utilisation
 
-**Générer la documentation d'une fonction :**
+**Generer la doc d'une fonction :**
 ```bash
 curl -N -X POST "http://localhost:8000/analyze/" \
   -H "Content-Type: application/json" \
-  -d '{"content": "def fibonacci(n: int) -> int:\n    if n <= 1: return n\n    return fibonacci(n-1) + fibonacci(n-2)", "language": "python", "mode": "doc"}'
+  -d '{"content": "def fib(n): return n if n<=1 else fib(n-1)+fib(n-2)", "language": "python", "mode": "doc"}'
 ```
 
 **Poser une question sur un document :**
 ```bash
 curl -N -X POST "http://localhost:8000/analyze/" \
   -H "Content-Type: application/json" \
-  -d '{"content": "Le projet utilise Terraform et minikube.", "language": "text", "mode": "question", "question": "Quels outils sont utilisés ?"}'
+  -d '{"content": "Le projet utilise Terraform et K8s.", "language": "text", "mode": "question", "question": "Quels outils IaC ?"}'
 ```
 
-**Vérification de santé :**
+**Choisir un modele specifique :**
 ```bash
-curl -X GET "http://localhost:8000/health/"
+# providers : groq (defaut), gemini, instant (llama 8b), medium (llama 70b), gpt (120b)
+curl -N -X POST "http://localhost:8000/analyze/" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "class Db: pass", "language": "python", "mode": "doc", "provider": "gemini"}'
 ```
 
----
+## Monitoring
 
-## Guide développeur (Dev)
-Cette section détaille les commandes nécessaires pour maintenir et faire évoluer l'infrastructure.
+- **Grafana** : `http://localhost:3000` (admin / admin)
+- **Prometheus** : collecte automatique via `prometheus-fastapi-instrumentator`
+- **Metriques custom** : `llm_requests_total`, `llm_tokens_total`, `llm_latency_seconds`, `llm_errors_total`
 
-### Environnement local
+## Tests de charge
+
 ```powershell
-# activer l'environnement virtuel
-.venv\Scripts\Activate.ps1
-
-# installer les dependances
-pip install -r requirements.txt
+# installer locust
 pip install -r requirements-dev.txt
 
-# configurer la securite
-pre-commit install
-
-# lancer l'api en mode developpement
-uvicorn app.main:app --reload
+# lancer le benchmark (1 min, 50% de la charge max des quotas)
+locust -f tests/locustfile.py --host http://localhost:8000 --users 5 --spawn-rate 1 --run-time 1m --headless
 ```
 
-### Configuration des secrets
-Créer un fichier `.env` à la racine du projet :
+## CI/CD
+
+Pipeline GitHub Actions en 4 jobs paralleles :
+1. **Lint** : `ruff check` + `ruff format --check`
+2. **Tests** : `pytest` avec couverture (seuil 70%)
+3. **Security** : scan Trivy (CRITICAL + HIGH)
+4. **Build & Push** : image Docker vers GHCR (main uniquement)
+
+Deploiement continu via **ArgoCD** (auto-sync depuis `gitops/base/`).
+
+## Configuration
+
+Creer un fichier `.env` a la racine :
 ```dotenv
-groq_api_key=gsk_votre_cle_ici
-gemini_api_key=votre_cle_gemini
-aws_id_key=votre_cle_aws
-aws_secret_key=votre_secret_aws
+groq_api_key=gsk_xxx
+gemini_api_key=xxx
 langfuse_public_key=pk-lf-xxx
 langfuse_secret_key=sk-lf-xxx
 ```
 
-### Validation du streaming
-Un script de test asynchrone est disponible pour valider que le streaming fonctionne correctement :
+## Dev Setup
+
 ```powershell
-python scripts/test_streaming.py
-```
-Si le nombre de chunks reçus est supérieur à 1, le streaming est validé.
-
-### Infrastructure (Terraform)
-Toutes les commandes doivent être lancées depuis le dossier `terraform/`.
-- **Initialiser :** `terraform init`
-- **Vérifier les changements :** `terraform plan`
-- **Déployer le réseau/IAM :** `terraform apply`
-
-### Kubernetes (minikube)
-Le projet utilise minikube pour le développement sans frais.
-- **Démarrer le cluster :** `minikube start --driver=docker`
-- **Activer l'Ingress :** `minikube addons enable ingress`
-- **Déployer les manifestes :** `kubectl apply -f k8s/`
-- **Arrêter le cluster :** `minikube stop`
-
-### Automatisation (Scripts Python)
-```powershell
-# deployer l'infrastructure terraform
-python scripts/manage_infra.py up --yes
-
-# deployer les manifestes kubernetes
-python scripts/manage_infra.py deploy
-
-# detruire l'infrastructure (finops)
-python scripts/manage_infra.py down --yes
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dev.txt
+pre-commit install
+uvicorn app.main:app --reload
 ```
 
 ---
 
-> Note : Ce projet est actuellement en phase de développement actif. [Suivre l'avancement ici](PROGRESS.md).
->
-> Les standards d'ingénierie appliqués sont documentés dans le [guide des standards](docs/engineering_standards.md).
+[Suivi du projet](PROGRESS.md) | [Backlog](TODO.md) | [Standards](docs/engineering_standards.md) | [GitOps](docs/argocd_gitops.md)

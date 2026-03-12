@@ -1,11 +1,11 @@
-import os
+import argparse
 import subprocess
 import sys
-import argparse
 from pathlib import Path
 
 # regle d'ingenierie : commentaires en minuscules pour les instructions techniques
 # standards d'ingenierie strictement respectes
+
 
 class InfraManager:
     def __init__(self, workspace_root: Path):
@@ -47,11 +47,12 @@ class InfraManager:
         for manifest in self.k8s_dir.glob("*.yaml"):
             self.run_command(["kubectl", "apply", "-f", str(manifest)])
 
+
 def main():
     parser = argparse.ArgumentParser(description="outil d'automatisation infra (pont dev/ops)")
     parser.add_argument("action", choices=["up", "down", "deploy", "start-local"])
     parser.add_argument("--yes", action="store_true", help="auto-approbation des actions")
-    
+
     args = parser.parse_args()
     manager = InfraManager(Path(__file__).parent.parent)
 
@@ -63,6 +64,7 @@ def main():
         manager.minikube_start()
     elif args.action == "deploy":
         manager.deploy_k8s()
+
 
 if __name__ == "__main__":
     main()

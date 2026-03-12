@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import analysis, health
 from app.core.config import settings
@@ -13,6 +14,9 @@ app = FastAPI(
 # inclusion des routes
 app.include_router(health.router, prefix="/health", tags=["Monitoring"])
 app.include_router(analysis.router, prefix="/analyze", tags=["Analyse LLM"])
+
+# configuration du monitoring prometheus
+Instrumentator().instrument(app).expose(app, tags=["Monitoring"])
 
 
 @app.get("/")
