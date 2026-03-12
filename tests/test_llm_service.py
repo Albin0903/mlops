@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.services.llm_service import PROVIDER_MODELS, SYSTEM_PROMPTS, TOKEN_COST, LLMService
+from app.services.llm_service import PROVIDER_MODELS, SYSTEM_PROMPTS, LLMService
 
 
 class TestSystemPrompts:
@@ -45,31 +45,29 @@ class TestSystemPrompts:
 class TestProviderConfig:
     """tests sur la configuration multi-provider"""
 
-    def test_token_cost_has_groq_and_gemini(self):
-        """le dictionnaire de cout doit contenir groq et gemini"""
-        assert "groq" in TOKEN_COST
-        assert "gemini" in TOKEN_COST
-
-    def test_each_provider_has_input_and_output_cost(self):
-        """chaque provider doit avoir un cout input et output"""
-        for provider in TOKEN_COST:
-            assert "input" in TOKEN_COST[provider]
-            assert "output" in TOKEN_COST[provider]
-
     def test_provider_models_defined(self):
         """chaque provider doit avoir un modele associe"""
         assert "groq" in PROVIDER_MODELS
         assert "gemini" in PROVIDER_MODELS
 
-    def test_cost_calculation(self):
-        """verification du calcul de cout pour 1000 tokens groq"""
-        cost = (1000 * TOKEN_COST["groq"]["input"]) + (1000 * TOKEN_COST["groq"]["output"])
-        assert cost > 0
-        assert cost < 1
-
 
 class TestStreamingResponse:
     """tests du streaming groq avec mocking complet"""
+
+    @pytest.mark.asyncio
+    async def test_get_full_response_aggregates_stream(self):
+        """le helper get_full_response doit concatener tous les chunks du stream"""
+        service = LLMService.__new__(LLMService)
+
+        async def mock_streaming_response(*args, **kwargs):
+            for chunk in ["alpha", " beta", " gamma"]:
+                yield chunk
+
+        service.get_streaming_response = mock_streaming_response
+
+        result = await service.get_full_response("prompt", "system", provider="gemini")
+
+        assert result == "alpha beta gamma"
 
     @pytest.mark.asyncio
     async def test_streaming_without_groq_key(self):
@@ -144,8 +142,7 @@ class TestStreamingResponse:
                 chunks.append(chunk)
 
             assert len(chunks) == 1
-            assert "[erreur]" in chunks[0]
-            assert "connection timeout" in chunks[0]
+            assert "[Erreur technique" in chunks[0]
 
     @pytest.mark.asyncio
     async def test_streaming_skips_empty_chunks(self):

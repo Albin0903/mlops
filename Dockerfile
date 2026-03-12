@@ -3,9 +3,9 @@ FROM python:3.12-slim-bookworm AS builder
 
 # definition des variables d'environnement pour la construction
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+  PYTHONUNBUFFERED=1 \
+  PIP_NO_CACHE_DIR=1 \
+  PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /install
 
@@ -31,16 +31,16 @@ COPY --chown=mlops:mlops app/ /app/app/
 
 # variables d'environnement pour l'execution
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+  PYTHONUNBUFFERED=1 \
+  PYTHONPATH=/app
 
 # passage a l'utilisateur non-root
 USER mlops
 
 # metadata
-LABEL maintainer="Albin <polytech@socgen.dev>" \
-      version="0.1.0" \
-      description="api professionnelle d'analyse de code par llm"
+LABEL maintainer="Albin" \
+  version="0.1.0" \
+  description="api professionnelle d'analyse de code par llm"
 
 # exposition du port
 EXPOSE 8000

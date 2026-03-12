@@ -103,10 +103,12 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           image-ref: ${{ steps.image.outputs.name }}:scan
           format: table
-          exit-code: 0
+          exit-code: '0'
           severity: CRITICAL,HIGH
           ignore-unfixed: true
 

@@ -13,5 +13,7 @@ class AnalysisRequest(BaseModel):
     )
     question: str | None = Field(None, description="la question specifique si le mode est 'question'")
     provider: str = Field(
-        "groq", pattern="^(groq|gemini)$", description="le fournisseur llm a utiliser : groq ou gemini"
+        "groq",
+        pattern="^(groq|gemini|instant|medium|gpt)$",
+        description="le fournisseur llm a utiliser (groq, gemini) ou modele specifique (instant, medium, gpt)",
     )

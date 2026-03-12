@@ -1,0 +1,31 @@
+name: Solveur Pedantix Quotidien
+
+on:
+  schedule:
+    # 11:00 UTC correspond à 12h00 (heure d'hiver) ou 13h00 (heure d'été) en France.
+    # Pedantix sortant à 12h00 (Paris), on le lance à 11h00 UTC.
+    - cron: '0 11 * * *'
+  workflow_dispatch: # Permet aussi de le lancer manuellement avec un bouton
+
+jobs:
+  solve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13' # Adapte selon ta version
+
+      - name: Installation des dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt # Assure-toi d'avoir httpx etc. dans ce fichier
+
+      - name: Lancement du script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/solve_pedantix.py

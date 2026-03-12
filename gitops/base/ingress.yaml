@@ -17,3 +17,13 @@ spec:
                 name: mlops-api
                 port:
                   number: 80
+    - host: grafana.mlops-gitops.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
