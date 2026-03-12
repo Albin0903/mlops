@@ -57,12 +57,12 @@ async def main():
         )
 
         logger.info("=" * 60)
-        logger.info("Starting Dagger CI Pipeline 🚀")
+        logger.info("Starting Dagger CI Pipeline")
         logger.info("=" * 60)
 
         # 4. Step: Lint
         step_start = time.time()
-        logger.info("[1/4] Linting with Ruff 🧹")
+        logger.info("[1/4] Linting with Ruff")
         await (
             base.with_exec(["ruff", "check", "app/", "tests/"])
             .with_exec(["ruff", "format", "--check", "app/", "tests/"])
@@ -73,7 +73,7 @@ async def main():
 
         # 5. Step: Tests
         step_start = time.time()
-        logger.info("[2/4] Running tests with Pytest 🧪")
+        logger.info("[2/4] Running tests with Pytest")
         await base.with_exec(
             ["python", "-m", "pytest", "tests/", "-v", "--cov=app", "--cov-report=term-missing"]
         ).sync()
@@ -82,7 +82,7 @@ async def main():
 
         # 6. Step: Build Image (Preview)
         step_start = time.time()
-        logger.info("[3/4] Building production Docker image 🐳")
+        logger.info("[3/4] Building production Docker image")
         build = src.docker_build().with_label("org.opencontainers.image.source", "https://github.com/Albin0903/mlops")
         await build.sync()
         results["Build"] = ("✅ PASSED", f"{time.time() - step_start:.1f}s")
@@ -90,7 +90,7 @@ async def main():
 
         # 7. Step: Security Scan (Trivy)
         step_start = time.time()
-        logger.info("[4/4] Running Security Scan with Trivy 🛡️")
+        logger.info("[4/4] Running Security Scan with Trivy")
         trivy = (
             dag.container()
             .from_("aquasec/trivy:latest")
@@ -124,7 +124,7 @@ async def main():
     for step_name, (status, duration) in results.items():
         logger.info(f"  {step_name:<12} {status}  ({duration})")
     logger.info("-" * 60)
-    logger.success(f"  Pipeline completed in {total_time:.1f}s 🎉")
+    logger.success(f"  Pipeline completed in {total_time:.1f}s")
     logger.info("=" * 60)
 
 

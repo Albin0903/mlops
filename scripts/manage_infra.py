@@ -3,9 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-# regle d'ingenierie : commentaires en minuscules pour les instructions techniques
-# standards d'ingenierie strictement respectes
-
 
 class InfraManager:
     def __init__(self, workspace_root: Path):
