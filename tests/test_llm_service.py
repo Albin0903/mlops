@@ -55,6 +55,21 @@ class TestStreamingResponse:
     """tests du streaming groq avec mocking complet"""
 
     @pytest.mark.asyncio
+    async def test_get_full_response_aggregates_stream(self):
+        """le helper get_full_response doit concatener tous les chunks du stream"""
+        service = LLMService.__new__(LLMService)
+
+        async def mock_streaming_response(*args, **kwargs):
+            for chunk in ["alpha", " beta", " gamma"]:
+                yield chunk
+
+        service.get_streaming_response = mock_streaming_response
+
+        result = await service.get_full_response("prompt", "system", provider="gemini")
+
+        assert result == "alpha beta gamma"
+
+    @pytest.mark.asyncio
     async def test_streaming_without_groq_key(self):
         """sans cle api groq, le service doit retourner un message d'erreur"""
         with patch("app.services.llm_service.settings") as mock_settings:

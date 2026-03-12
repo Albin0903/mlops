@@ -9,6 +9,15 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
 
+PROMETHEUS_METRICS = {}
+
+
+def _get_prometheus_metric(metric_name: str, factory):
+    """cree une metrique Prometheus une seule fois par process"""
+    if metric_name not in PROMETHEUS_METRICS:
+        PROMETHEUS_METRICS[metric_name] = factory()
+    return PROMETHEUS_METRICS[metric_name]
+
 # regle : resilience, streaming et observabilite pour l'excellence mlops
 
 # prompts systeme optimises pour reduire la consommation de tokens
@@ -160,10 +169,13 @@ class LLMService:
             try:
                 from prometheus_client import Counter
 
-                LLM_ERRORS_TOTAL = Counter(
-                    "llm_errors_total", "nombre total d'erreurs llm", ["provider", "model", "error_type"]
+                llm_errors_total = _get_prometheus_metric(
+                    "llm_errors_total",
+                    lambda: Counter(
+                        "llm_errors_total", "nombre total d'erreurs llm", ["provider", "model", "error_type"]
+                    ),
                 )
-                LLM_ERRORS_TOTAL.labels(provider=provider, model=model, error_type=type(e).__name__).inc()
+                llm_errors_total.labels(provider=provider, model=model, error_type=type(e).__name__).inc()
             except Exception:
                 pass
 
@@ -186,18 +198,27 @@ class LLMService:
         try:
             from prometheus_client import Counter, Histogram
 
-            LLM_REQUESTS_TOTAL = Counter(
-                "llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"]
+            llm_requests_total = _get_prometheus_metric(
+                "llm_requests_total",
+                lambda: Counter(
+                    "llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"]
+                ),
             )
-            LLM_TOKENS_TOTAL = Counter(
-                "llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"]
+            llm_tokens_total = _get_prometheus_metric(
+                "llm_tokens_total",
+                lambda: Counter(
+                    "llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"]
+                ),
             )
-            LLM_LATENCY_SECONDS = Histogram("llm_latency_seconds", "latence des appels llm", ["provider", "model"])
+            llm_latency_seconds = _get_prometheus_metric(
+                "llm_latency_seconds",
+                lambda: Histogram("llm_latency_seconds", "latence des appels llm", ["provider", "model"]),
+            )
 
-            LLM_REQUESTS_TOTAL.labels(provider=provider, model=model, mode=mode).inc()
-            LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="input").inc(input_tokens)
-            LLM_TOKENS_TOTAL.labels(provider=provider, model=model, type="output").inc(output_tokens)
-            LLM_LATENCY_SECONDS.labels(provider=provider, model=model).observe(latency)
+            llm_requests_total.labels(provider=provider, model=model, mode=mode).inc()
+            llm_tokens_total.labels(provider=provider, model=model, type="input").inc(input_tokens)
+            llm_tokens_total.labels(provider=provider, model=model, type="output").inc(output_tokens)
+            llm_latency_seconds.labels(provider=provider, model=model).observe(latency)
         except Exception as e:
             logger.warning(f"erreur lors de la generation des metriques prometheus : {e}")
 
@@ -216,6 +237,24 @@ class LLMService:
                 )
             except Exception as e:
                 logger.warning(f"langfuse logging end failed (non-blocking) : {e}")
+
+    async def get_full_response(
+        self,
+        prompt: str,
+        system_message: str,
+        mode: str = "doc",
+        provider: str = "groq",
+    ) -> str:
+        """aggrege le flux llm complet dans une seule chaine"""
+        chunks = []
+        async for content in self.get_streaming_response(
+            prompt=prompt,
+            system_message=system_message,
+            mode=mode,
+            provider=provider,
+        ):
+            chunks.append(content)
+        return "".join(chunks)
 
 
 llm_service = LLMService()
