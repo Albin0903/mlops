@@ -7,8 +7,9 @@ resultat attendu : le texte s'affiche mot par mot (chunks) dans le terminal.
 """
 
 import asyncio
-import httpx
 import time
+
+import httpx
 
 API_URL = "http://localhost:8000/analyze/"
 
@@ -16,7 +17,7 @@ API_URL = "http://localhost:8000/analyze/"
 TEST_DOC = {
     "content": "def fibonacci(n: int) -> int:\n    if n <= 1:\n        return n\n    return fibonacci(n - 1) + fibonacci(n - 2)",
     "language": "python",
-    "mode": "doc"
+    "mode": "doc",
 }
 
 # cas de test : question sur un document
@@ -24,15 +25,15 @@ TEST_QUESTION = {
     "content": "le projet utilise terraform pour l'iac, minikube pour kubernetes local, et groq pour les appels llm.",
     "language": "text",
     "mode": "question",
-    "question": "quels outils sont utilises pour l'infrastructure ?"
+    "question": "quels outils sont utilises pour l'infrastructure ?",
 }
 
 
 async def test_streaming(payload: dict, label: str):
     """envoie une requete et affiche les chunks au fur et a mesure"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"test : {label}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     chunk_count = 0
     start = time.perf_counter()
@@ -48,7 +49,7 @@ async def test_streaming(payload: dict, label: str):
                 print(chunk, end="", flush=True)
 
     elapsed = time.perf_counter() - start
-    print(f"\n\n--- resultats ---")
+    print("\n\n--- resultats ---")
     print(f"chunks recus     : {chunk_count}")
     print(f"duree totale     : {elapsed:.2f}s")
     print(f"streaming valide : {'oui' if chunk_count > 1 else 'non (reponse en bloc)'}")

@@ -1,45 +1,49 @@
-import sys
 import os
+import sys
 import time
+
 import anyio
 import dagger
 from dagger import dag
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()
+
 
 async def main():
     # Configuration
     python_version = "3.13"
     results = {}
     pipeline_start = time.time()
-    
+
     # Appel explicite pour vérifier que le token est bien chargé depuis le .env
     dagger_token = os.getenv("DAGGER_CLOUD_TOKEN")
     if not dagger_token:
         logger.error("DAGGER_CLOUD_TOKEN n'a pas été trouvé. Vérifiez votre fichier .env !")
         sys.exit(1)
-        
+
     os.environ["DAGGER_CLOUD_TOKEN"] = dagger_token
-    
+
     # 1. Start connection
     async with dagger.connection(dagger.Config(log_output=sys.stderr)):
-        
         # 2. Use 'dag' for EVERYTHING, mais on exclut les dossiers lourds ou non nécessaires pour le CI
-        src = dag.host().directory(".", exclude=[
-            ".git",
-            ".venv",
-            "__pycache__",
-            ".pytest_cache",
-            ".env",
-            ".ruff_cache",
-            "terraform",
-            "k8s",
-            "gitops",
-            "argocd",
-            "docs"
-        ])
+        src = dag.host().directory(
+            ".",
+            exclude=[
+                ".git",
+                ".venv",
+                "__pycache__",
+                ".pytest_cache",
+                ".env",
+                ".ruff_cache",
+                "terraform",
+                "k8s",
+                "gitops",
+                "argocd",
+                "docs",
+            ],
+        )
 
         # 3. Base container with Python
         base = (
@@ -70,24 +74,16 @@ async def main():
         # 5. Step: Tests
         step_start = time.time()
         logger.info("[2/4] Running tests with Pytest 🧪")
-        test_output = await (
-            base.with_exec([
-                "python", "-m", "pytest", "tests/", "-v",
-                "--cov=app",
-                "--cov-report=term-missing"
-            ])
-            .stdout()
-        )
+        await base.with_exec(
+            ["python", "-m", "pytest", "tests/", "-v", "--cov=app", "--cov-report=term-missing"]
+        ).sync()
         results["Tests"] = ("✅ PASSED", f"{time.time() - step_start:.1f}s")
         logger.success("[2/4] Tests passed!")
 
         # 6. Step: Build Image (Preview)
         step_start = time.time()
         logger.info("[3/4] Building production Docker image 🐳")
-        build = (
-            src.docker_build()
-            .with_label("org.opencontainers.image.source", "https://github.com/Albin0903/mlops")
-        )
+        build = src.docker_build().with_label("org.opencontainers.image.source", "https://github.com/Albin0903/mlops")
         await build.sync()
         results["Build"] = ("✅ PASSED", f"{time.time() - step_start:.1f}s")
         logger.success("[3/4] Build successful!")
@@ -99,16 +95,23 @@ async def main():
             dag.container()
             .from_("aquasec/trivy:latest")
             .with_mounted_file("/tmp/image.tar", build.as_tarball())
-            .with_exec([
-                "trivy", "image",
-                "--input", "/tmp/image.tar",
-                "--format", "table",
-                "--exit-code", "0",
-                "--severity", "CRITICAL,HIGH",
-                "--ignore-unfixed"
-            ])
+            .with_exec(
+                [
+                    "trivy",
+                    "image",
+                    "--input",
+                    "/tmp/image.tar",
+                    "--format",
+                    "table",
+                    "--exit-code",
+                    "0",
+                    "--severity",
+                    "CRITICAL,HIGH",
+                    "--ignore-unfixed",
+                ]
+            )
         )
-        trivy_output = await trivy.stdout()
+        await trivy.sync()
         results["Security"] = ("✅ PASSED", f"{time.time() - step_start:.1f}s")
         logger.success("[4/4] Security Scan passed!")
 
@@ -123,6 +126,7 @@ async def main():
     logger.info("-" * 60)
     logger.success(f"  Pipeline completed in {total_time:.1f}s 🎉")
     logger.info("=" * 60)
+
 
 if __name__ == "__main__":
     try:

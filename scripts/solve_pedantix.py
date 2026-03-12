@@ -12,48 +12,151 @@ La stratégie suit plusieurs phases :
    - Validation croisée avec l'API Wikipedia.
 """
 
-from __future__ import annotations
+import sys
+from pathlib import Path
+
+# On ajoute le ROOT_DIR avant les imports locaux pour respecter le lint
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 import argparse
 import asyncio
 import html
 import json
 import re
-import sys
 from collections import Counter
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import httpx
-
-ROOT_DIR = Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
-
 from app.services.llm_service import llm_service
 
 BASE_URL = "https://pedantix.certitudes.org"
 WIKIPEDIA_API = "https://fr.wikipedia.org/w/api.php"
 
-DEFAULT_INITIAL_PROBES =[
-    "pays", "ville", "etat", "guerre", "empire", "roi", "art", "musique",
-    "film", "roman", "science", "chimie", "physique", "animal", "plante",
-    "espece", "langue", "religion", "sport", "football", "informatique",
-    "internet", "entreprise", "medecine", "maladie", "amerique", "europe", "france",
+DEFAULT_INITIAL_PROBES = [
+    "pays",
+    "ville",
+    "etat",
+    "guerre",
+    "empire",
+    "roi",
+    "art",
+    "musique",
+    "film",
+    "roman",
+    "science",
+    "chimie",
+    "physique",
+    "animal",
+    "plante",
+    "espece",
+    "langue",
+    "religion",
+    "sport",
+    "football",
+    "informatique",
+    "internet",
+    "entreprise",
+    "medecine",
+    "maladie",
+    "amerique",
+    "europe",
+    "france",
 ]
 
 FALLBACK_PROBE_PACKS = {
-    "animal":["mammifere", "canide", "felin", "canis", "latrans", "faune", "predateur", "nahuatl", "mexique", "canada", "centrale", "espece"],
-    "geography":["canada", "mexique", "bresil", "suisse", "russie", "italie", "capitale", "population", "continent", "province", "frontiere", "ocean"],
-    "biography":["homme", "femme", "ne", "mort", "francais", "auteur", "acteur", "peintre", "politique", "histoire", "guerre", "vie"],
-    "science":["biologie", "chimie", "physique", "cellule", "virus", "bacterie", "maladie", "medecine", "molecule", "energie", "espece", "organisme"],
-    "culture":["film", "roman", "musique", "album", "chanson", "acteur", "realisateur", "peinture", "artiste", "auteur", "theatre", "poesie"],
+    "animal": [
+        "mammifere",
+        "canide",
+        "felin",
+        "canis",
+        "latrans",
+        "faune",
+        "predateur",
+        "nahuatl",
+        "mexique",
+        "canada",
+        "centrale",
+        "espece",
+    ],
+    "geography": [
+        "canada",
+        "mexique",
+        "bresil",
+        "suisse",
+        "russie",
+        "italie",
+        "capitale",
+        "population",
+        "continent",
+        "province",
+        "frontiere",
+        "ocean",
+    ],
+    "biography": [
+        "homme",
+        "femme",
+        "ne",
+        "mort",
+        "francais",
+        "auteur",
+        "acteur",
+        "peintre",
+        "politique",
+        "histoire",
+        "guerre",
+        "vie",
+    ],
+    "science": [
+        "biologie",
+        "chimie",
+        "physique",
+        "cellule",
+        "virus",
+        "bacterie",
+        "maladie",
+        "medecine",
+        "molecule",
+        "energie",
+        "espece",
+        "organisme",
+    ],
+    "culture": [
+        "film",
+        "roman",
+        "musique",
+        "album",
+        "chanson",
+        "acteur",
+        "realisateur",
+        "peinture",
+        "artiste",
+        "auteur",
+        "theatre",
+        "poesie",
+    ],
 }
 
 STOPWORDS = {
-    "page", "pages", "mot", "mots", "article", "articles", "pays", "ville",
-    "etat", "etats", "art", "science", "animal", "animale", "animaux", "langue", "langues",
+    "page",
+    "pages",
+    "mot",
+    "mots",
+    "article",
+    "articles",
+    "pays",
+    "ville",
+    "etat",
+    "etats",
+    "art",
+    "science",
+    "animal",
+    "animale",
+    "animaux",
+    "langue",
+    "langues",
 }
 
 BROWSER_HEADERS = {
@@ -76,7 +179,9 @@ WIKIPEDIA_HEADERS = {
 }
 
 SCRIPT_TAG_RE = re.compile(r'<script id="script"[^>]*data-puzzle-number="(?P<puzzle>\d+)"', re.IGNORECASE)
-WIKI_BLOCK_RE = re.compile(r'<div id="wiki"class="game">(?P<content>[\s\S]+?)</div></div></div></div></div></article>', re.IGNORECASE)
+WIKI_BLOCK_RE = re.compile(
+    r'<div id="wiki"class="game">(?P<content>[\s\S]+?)</div></div></div></div></div></article>', re.IGNORECASE
+)
 MASK_SPAN_RE = re.compile(r'<span class="(?:h )?w">([\s\S]*?)</span>')
 TAG_RE = re.compile(r"<[^>]+>")
 JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(?P<json>[\s\S]*?)```", re.IGNORECASE)
@@ -93,11 +198,27 @@ class GuessResult:
 
 
 def normalize_text(value: str) -> str:
-    replacements = str.maketrans({
-        "é": "e", "è": "e", "ê": "e", "ë": "e", "à": "a", "â": "a", "ä": "a",
-        "î": "i", "ï": "i", "ô": "o", "ö": "o", "ù": "u", "û": "u", "ü": "u",
-        "ç": "c", "œ": "oe", "æ": "ae",
-    })
+    replacements = str.maketrans(
+        {
+            "é": "e",
+            "è": "e",
+            "ê": "e",
+            "ë": "e",
+            "à": "a",
+            "â": "a",
+            "ä": "a",
+            "î": "i",
+            "ï": "i",
+            "ô": "o",
+            "ö": "o",
+            "ù": "u",
+            "û": "u",
+            "ü": "u",
+            "ç": "c",
+            "œ": "oe",
+            "æ": "ae",
+        }
+    )
     return value.lower().strip().translate(replacements)
 
 
@@ -110,7 +231,7 @@ def extract_homepage_metadata(page_html: str) -> tuple[int, list[int], str]:
     if not block_match:
         raise RuntimeError("Impossible de localiser le bloc masque.")
 
-    slot_lengths: list[int] =[]
+    slot_lengths: list[int] = []
 
     def replace_slot(match: re.Match[str]) -> str:
         slot_index = len(slot_lengths)
@@ -189,7 +310,7 @@ async def score_words_concurrently(
     known_words: set[str],
     concurrency_limit: int = 15,
     verbose: bool = False,
-    tag: str = "probe"
+    tag: str = "probe",
 ) -> tuple[list[GuessResult], GuessResult | None]:
     """Exécute les scores de mots en parallèle avec une limite de concurrence."""
     semaphore = asyncio.Semaphore(concurrency_limit)
@@ -205,20 +326,21 @@ async def score_words_concurrently(
                     await asyncio.sleep(0.5)
             raise RuntimeError("Unreachable")
 
-    words_to_test =[]
+    words_to_test = []
     for w in words:
-        if not isinstance(w, str): continue
+        if not isinstance(w, str):
+            continue
         norm = normalize_text(w)
         if norm and norm not in known_words and norm not in words_to_test:
             words_to_test.append(norm)
 
-    results: list[GuessResult] =[]
+    results: list[GuessResult] = []
     solution_result: GuessResult | None = None
 
     if not words_to_test:
         return results, solution_result
 
-    tasks =[asyncio.create_task(bound_score(w)) for w in words_to_test]
+    tasks = [asyncio.create_task(bound_score(w)) for w in words_to_test]
 
     try:
         for coro in asyncio.as_completed(tasks):
@@ -248,7 +370,7 @@ async def score_words_concurrently(
 def summarize_results(results: list[GuessResult]) -> dict[str, Any]:
     exact_counter: Counter[str] = Counter()
     exact_positions: dict[str, list[int]] = {}
-    probe_scores: list[dict[str, Any]] =[]
+    probe_scores: list[dict[str, Any]] = []
 
     for result in results:
         for term, positions in result.exact_hits.items():
@@ -258,14 +380,16 @@ def summarize_results(results: list[GuessResult]) -> dict[str, Any]:
 
         best_score = extract_best_score(result.approx_hits)
         if best_score is not None:
-            probe_scores.append({
-                "word": result.word,
-                "best_score": round(best_score, 2),
-                "approx_markers": len(result.approx_hits),
-            })
+            probe_scores.append(
+                {
+                    "word": result.word,
+                    "best_score": round(best_score, 2),
+                    "approx_markers": len(result.approx_hits),
+                }
+            )
 
     probe_scores.sort(key=lambda item: item["best_score"], reverse=True)
-    sorted_exact =[
+    sorted_exact = [
         {"term": term, "count": exact_counter[term], "positions": sorted(set(exact_positions[term]))[:12]}
         for term in sorted(exact_counter, key=lambda term: (-exact_counter[term], term))
         if normalize_text(term) not in STOPWORDS
@@ -279,18 +403,18 @@ def infer_probe_pack_order(summary: dict[str, Any]) -> list[str]:
     exact_terms = {normalize_text(item["term"]) for item in summary["exact_terms"]}
     signals = words | exact_terms
 
-    scored_packs =[
+    scored_packs = [
         ("animal", len(signals & {"animal", "espece", "amerique", "faune", "langue"})),
         ("geography", len(signals & {"amerique", "europe", "pays", "ville", "continent", "etat"})),
         ("biography", len(signals & {"guerre", "empire", "politique", "histoire", "homme", "femme"})),
         ("science", len(signals & {"science", "physique", "chimie", "medecine", "maladie"})),
-        ("culture", len(signals & {"film", "roman", "musique", "art"}))
+        ("culture", len(signals & {"film", "roman", "musique", "art"})),
     ]
     return list(dict.fromkeys(name for name, _ in sorted(scored_packs, key=lambda item: item[1], reverse=True)))
 
 
 def build_fallback_probes(summary: dict[str, Any], known_words: set[str]) -> list[str]:
-    probes: list[str] =[]
+    probes: list[str] = []
     for pack_name in infer_probe_pack_order(summary):
         probes.extend(FALLBACK_PROBE_PACKS[pack_name])
     return probes
@@ -329,7 +453,9 @@ async def ask_llm_for_probes(
         "- 15 à 25 next_probes (mots uniques ou groupes très courts, nouveaux mots pertinents pour explorer tes hypothèses)\n"
         "- wikipedia_queries doit contenir des requêtes par mots-clés simples pour la recherche (PAS d'URL, PAS de site:).\n"
     )
-    response = await llm_service.get_full_response(prompt=prompt, system_message=system_message, mode="question", provider=provider)
+    response = await llm_service.get_full_response(
+        prompt=prompt, system_message=system_message, mode="question", provider=provider
+    )
     return extract_json_payload(response)
 
 
@@ -361,16 +487,20 @@ async def ask_llm_for_candidates(
         "- Ne propose PAS les titres déjà testés.\n"
         "- wikipedia_queries doit contenir des mots-clés simples pour la recherche (ex: 'religion angleterre', pas d'URL ni de site:).\n"
     )
-    response = await llm_service.get_full_response(prompt=prompt, system_message=system_message, mode="question", provider=provider)
+    response = await llm_service.get_full_response(
+        prompt=prompt, system_message=system_message, mode="question", provider=provider
+    )
     return extract_json_payload(response)
 
 
 def filter_candidate_titles(candidates: list[str]) -> list[str]:
-    cleaned, seen =[], set()
+    cleaned, seen = [], set()
     for candidate in candidates:
-        if not isinstance(candidate, str): continue
+        if not isinstance(candidate, str):
+            continue
         title = candidate.strip()
-        if not title: continue
+        if not title:
+            continue
         lowered = title.lower()
         if lowered not in seen:
             seen.add(lowered)
@@ -379,24 +509,31 @@ def filter_candidate_titles(candidates: list[str]) -> list[str]:
 
 
 async def search_wikipedia_titles(client: httpx.AsyncClient, queries: list[str], per_query: int = 10) -> list[str]:
-    candidates: list[str] =[]
-    
+    candidates: list[str] = []
+
     async def search_single(query: str):
         try:
             response = await client.get(
                 WIKIPEDIA_API,
                 headers=WIKIPEDIA_HEADERS,
-                params={"action": "query", "list": "search", "format": "json", "utf8": 1, "srsearch": query, "srlimit": per_query},
+                params={
+                    "action": "query",
+                    "list": "search",
+                    "format": "json",
+                    "utf8": 1,
+                    "srsearch": query,
+                    "srlimit": per_query,
+                },
                 timeout=15.0,
             )
             response.raise_for_status()
-            for item in response.json().get("query", {}).get("search",[]):
+            for item in response.json().get("query", {}).get("search", []):
                 title = item.get("title")
                 if isinstance(title, str):
                     candidates.append(title)
         except Exception:
             pass
-            
+
     await asyncio.gather(*(search_single(q) for q in queries))
     return filter_candidate_titles(candidates)
 
@@ -407,7 +544,10 @@ def format_exact_hits(summary: dict[str, Any]) -> str:
 
 
 def format_probe_scores(summary: dict[str, Any]) -> str:
-    lines = [f"- {i['word']} -> best_score={i['best_score']} markers={i['approx_markers']}" for i in summary["best_probes"][:20]]
+    lines = [
+        f"- {i['word']} -> best_score={i['best_score']} markers={i['approx_markers']}"
+        for i in summary["best_probes"][:20]
+    ]
     return "\n".join(lines) if lines else "- aucune proximité notable"
 
 
@@ -418,7 +558,7 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
         homepage.raise_for_status()
 
         puzzle_number, slot_lengths, masked_preview = extract_homepage_metadata(homepage.text)
-        first_words_lengths = slot_lengths[:15] if slot_lengths else[]
+        first_words_lengths = slot_lengths[:15] if slot_lengths else []
 
         print(f"Puzzle         : {puzzle_number}")
         print(f"Longueurs mots : {first_words_lengths}")
@@ -426,9 +566,9 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
         print(f"Provider LLM   : {provider}")
         print(f"Aperçu masque  : {masked_preview[:220]}...\n")
 
-        all_results: list[GuessResult] =[]
+        all_results: list[GuessResult] = []
         known_words: set[str] = set()
-        tested_titles: list[str] =[]
+        tested_titles: list[str] = []
 
         # Phase 1: Vague initiale
         results, solution = await score_words_concurrently(
@@ -447,7 +587,7 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
         # Phase 2: Vague heuristique
         fallback_probes = build_fallback_probes(summary, known_words)
         print(f"Sondes heuristiques : {', '.join(fallback_probes[:15])}...\n")
-        
+
         results, solution = await score_words_concurrently(
             client, puzzle_number, fallback_probes, known_words, verbose=verbose, tag="probe-fallback"
         )
@@ -465,10 +605,10 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
         max_iterations = 4
         for iteration in range(1, max_iterations + 1):
             print(f"================ ITERATION CONVERGENCE {iteration}/{max_iterations} ================\n")
-            
+
             # Phase 3: Sondes suggérées
             probe_plan = await ask_llm_for_probes(first_words_lengths, masked_preview, summary, provider)
-            llm_probes = probe_plan.get("next_probes",[])
+            llm_probes = probe_plan.get("next_probes", [])
 
             print("Hypothèse de recherche (Sondes) :\n" + probe_plan.get("hypothesis", "Aucune"))
             print("\nSondes suggérées : " + ", ".join(llm_probes) + "\n")
@@ -485,14 +625,16 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
             summary = summarize_results(all_results)
             print("Indices exacts après sondes suggérées :\n" + format_exact_hits(summary))
             print("\nMeilleures proximités après sondes suggérées :\n" + format_probe_scores(summary) + "\n")
-            
+
             # Phase 4: Candidats potentiels
-            candidate_plan = await ask_llm_for_candidates(first_words_lengths, masked_preview, summary, tested_titles, provider)
-            llm_candidates = filter_candidate_titles(candidate_plan.get("candidate_titles",[]))
-            
+            candidate_plan = await ask_llm_for_candidates(
+                first_words_lengths, masked_preview, summary, tested_titles, provider
+            )
+            llm_candidates = filter_candidate_titles(candidate_plan.get("candidate_titles", []))
+
             # Nettoyage des requêtes pour éviter l'opérateur "site:" inutile
-            new_queries =[q.strip() for q in candidate_plan.get("wikipedia_queries", []) if isinstance(q, str)]
-            clean_queries =[]
+            new_queries = [q.strip() for q in candidate_plan.get("wikipedia_queries", []) if isinstance(q, str)]
+            clean_queries = []
             for q in new_queries:
                 q_clean = re.sub(r"site:fr\.wikipedia\.org", "", q).strip()
                 if q_clean and q_clean not in clean_queries:
@@ -503,9 +645,9 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
 
             wiki_candidates = await search_wikipedia_titles(client, clean_queries)
             title_candidates = filter_candidate_titles(llm_candidates + wiki_candidates)
-            
+
             # Tri et limitation des candidats
-            valid_candidates =[]
+            valid_candidates = []
             for c in title_candidates:
                 if c not in tested_titles and normalize_text(c) not in known_words:
                     valid_candidates.append(c)
@@ -517,7 +659,13 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
             print()
 
             results, solution = await score_words_concurrently(
-                client, puzzle_number, title_candidates, known_words, concurrency_limit=10, verbose=verbose, tag=f"candidate-{iteration}"
+                client,
+                puzzle_number,
+                title_candidates,
+                known_words,
+                concurrency_limit=10,
+                verbose=verbose,
+                tag=f"candidate-{iteration}",
             )
             all_results.extend(results)
             tested_titles.extend(title_candidates)
@@ -530,7 +678,9 @@ async def solve_pedantix(provider: str, max_candidates: int, verbose: bool) -> N
             summary = summarize_results(all_results)
             print(f"Aucun candidat n'a résolu la page à l'itération {iteration}. Poursuite de la recherche...\n")
 
-        raise RuntimeError("Aucun candidat n'a résolu la page après toutes les itérations. Relancez avec --verbose ou augmentez --max-candidates.")
+        raise RuntimeError(
+            "Aucun candidat n'a résolu la page après toutes les itérations. Relancez avec --verbose ou augmentez --max-candidates."
+        )
 
 
 def parse_args() -> argparse.Namespace:

@@ -18,6 +18,7 @@ def _get_prometheus_metric(metric_name: str, factory):
         PROMETHEUS_METRICS[metric_name] = factory()
     return PROMETHEUS_METRICS[metric_name]
 
+
 # regle : resilience, streaming et observabilite pour l'excellence mlops
 
 # prompts systeme optimises pour reduire la consommation de tokens
@@ -200,15 +201,11 @@ class LLMService:
 
             llm_requests_total = _get_prometheus_metric(
                 "llm_requests_total",
-                lambda: Counter(
-                    "llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"]
-                ),
+                lambda: Counter("llm_requests_total", "nombre total de requetes llm", ["provider", "model", "mode"]),
             )
             llm_tokens_total = _get_prometheus_metric(
                 "llm_tokens_total",
-                lambda: Counter(
-                    "llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"]
-                ),
+                lambda: Counter("llm_tokens_total", "nombre total de tokens utilises", ["provider", "model", "type"]),
             )
             llm_latency_seconds = _get_prometheus_metric(
                 "llm_latency_seconds",
