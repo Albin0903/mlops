@@ -113,6 +113,28 @@ Pipeline GitHub Actions en 4 jobs paralleles :
 
 Deploiement continu via **ArgoCD** (auto-sync depuis `gitops/base/`).
 
+## Continuous Integration (Dagger)
+
+Le projet utilise **Dagger** pour exécuter le pipeline de CI de manière programmable.
+
+### Exécution locale
+```powershell
+python scripts/dagger_ci.py
+```
+
+### Exécution avec Dagger Cloud
+Le script `scripts/dagger_ci.py` charge automatiquement le `DAGGER_CLOUD_TOKEN` depuis votre fichier `.env`. Pour bénéficier de l'observabilité complète sur l'interface **[Dagger Cloud](https://dagger.cloud)** :
+
+```powershell
+# Assurez-vous d'avoir le CLI Dagger installé
+dagger run python scripts/dagger_ci.py
+```
+
+Vous pouvez également lancer manuellement avec le token en variable d'environnement :
+```powershell
+$env:DAGGER_CLOUD_TOKEN="votre_token"; dagger run python scripts/dagger_ci.py
+```
+
 ## Configuration
 
 Creer un fichier `.env` a la racine :

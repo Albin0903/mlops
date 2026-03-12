@@ -1,11 +1,6 @@
 import time
 
-from google import genai
-from google.genai import types
-from groq import AsyncGroq
-from langfuse import get_client
 from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
 
@@ -53,27 +48,43 @@ PROVIDER_MODELS = {
 class LLMService:
     def __init__(self):
         """initialisation des clients llm (groq + gemini)"""
-        self.groq_client = AsyncGroq(api_key=settings.groq_api_key) if settings.groq_api_key else None
-        self.gemini_client = genai.Client(api_key=settings.gemini_api_key) if settings.gemini_api_key else None
+        if settings.groq_api_key:
+            from groq import AsyncGroq
+
+            self.groq_client = AsyncGroq(api_key=settings.groq_api_key)
+        else:
+            self.groq_client = None
+
+        if settings.gemini_api_key:
+            from google import genai
+
+            self.gemini_client = genai.Client(api_key=settings.gemini_api_key)
+        else:
+            self.gemini_client = None
 
     def get_system_prompt(self, mode: str, language: str) -> str:
         """retourne le prompt systeme optimise selon le mode"""
         return SYSTEM_PROMPTS[mode].format(language=language)
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
     async def _create_groq_stream(self, prompt: str, system_message: str, model: str):
         """cree le flux groq (retryable car ne yield pas)"""
-        return await self.groq_client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-            max_tokens=1024,
-            top_p=1,
-            stream=True,
-        )
+        from tenacity import retry, stop_after_attempt, wait_exponential
+
+        @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+        async def _call():
+            return await self.groq_client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=1024,
+                top_p=1,
+                stream=True,
+            )
+
+        return await _call()
 
     async def _stream_groq(self, prompt: str, system_message: str, model: str):
         """generateur de streaming pour groq"""
@@ -91,6 +102,8 @@ class LLMService:
 
     async def _stream_gemini(self, prompt: str, system_message: str, model: str):
         """generateur de streaming asynchrone pour gemini avec thinking mode"""
+        from google.genai import types
+
         full_prompt = f"{system_message}\n\n{prompt}"
 
         config = types.GenerateContentConfig(
@@ -138,6 +151,8 @@ class LLMService:
         langfuse_generation = None
         if settings.langfuse_enabled:
             try:
+                from langfuse import get_client
+
                 langfuse = get_client()
                 langfuse_generation = langfuse.generation(
                     name=f"llm-{mode}-{provider}",
