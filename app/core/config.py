@@ -21,8 +21,6 @@ class Settings(BaseSettings):
     aws_secret_key: str | None = None
 
     # cles api llm (a configurer dans .env)
-    openai_api_key: str | None = None
-    mistral_api_key: str | None = None
     groq_api_key: str | None = None
     gemini_api_key: str | None = None
 
@@ -30,6 +28,9 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_host: str = "https://cloud.langfuse.com"
+
+    # ollama (local)
+    ollama_base_url: str = "http://127.0.0.1:11434"
 
     @property
     def langfuse_enabled(self) -> bool:

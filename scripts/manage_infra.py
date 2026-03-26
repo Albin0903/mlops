@@ -39,8 +39,38 @@ class InfraManager:
         self.run_command(["minikube", "start", "--driver=docker"])
         self.run_command(["minikube", "addons", "enable", "ingress"])
 
+    def load_secrets(self):
+        """inject .env secrets into kubernetes namespace"""
+        env_file = self.root / ".env"
+        if not env_file.exists():
+            print("info: Aucun fichier .env trouvé, skip secrets.")
+            return
+
+        print("info: Création du secret mlops-secrets depuis .env")
+        try:
+            subprocess.run(
+                ["kubectl", "delete", "secret", "mlops-secrets", "--namespace=mlops"],
+                cwd=self.root,
+                capture_output=True,
+            )
+            self.run_command(
+                [
+                    "kubectl",
+                    "create",
+                    "secret",
+                    "generic",
+                    "mlops-secrets",
+                    f"--from-env-file={env_file}",
+                    "--namespace=mlops",
+                ],
+                cwd=self.root,
+            )
+        except Exception as e:
+            print(f"info: Erreur injection secrets: {e}")
+
     def deploy_k8s(self):
         """deployer tous les manifestes du dossier k8s"""
+        self.load_secrets()
         for manifest in self.k8s_dir.glob("*.yaml"):
             self.run_command(["kubectl", "apply", "-f", str(manifest)])
 
