@@ -42,6 +42,8 @@ async def main():
                 "gitops",
                 "argocd",
                 "docs",
+                ".agents",
+                ".claude",
             ],
         )
 
@@ -93,7 +95,7 @@ async def main():
         logger.info("[4/4] Running Security Scan with Trivy")
         trivy = (
             dag.container()
-            .from_("aquasec/trivy:latest")
+            .from_("ghcr.io/aquasecurity/trivy:latest")
             .with_mounted_file("/tmp/image.tar", build.as_tarball())
             .with_exec(
                 [

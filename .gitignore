@@ -9,3 +9,8 @@ __pycache__/
 .venv/
 *.tfvars
 .secret.baseline
+
+# Agent Skills
+.agents/
+.claude/
+skills-lock.json
