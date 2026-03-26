@@ -3,9 +3,13 @@ import sys
 import time
 
 import anyio
+import pytest
+from dotenv import load_dotenv
+
+pytest.importorskip("dagger")
+
 import dagger
 from dagger import dag
-from dotenv import load_dotenv
 from loguru import logger
 
 load_dotenv()
@@ -48,9 +52,7 @@ async def test_pedantix():
 
         try:
             # Exécution du script avec un nombre limité de candidats pour le test
-            result = await container.with_exec(
-                ["python", "-m", "scripts.pedantix.cli", "--max-candidates", "5"]
-            ).stdout()
+            result = await container.with_exec(["python", "scripts/pedantix/cli.py", "--max-candidates", "5"]).stdout()
 
             # Afficher les logs de sortie
             print(result)

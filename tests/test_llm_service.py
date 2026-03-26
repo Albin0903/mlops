@@ -80,9 +80,10 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_without_groq_key(self):
         """sans cle api groq, le service doit retourner un message d'erreur"""
-        with patch("app.services.llm_service.get_provider", return_value=None), patch(
-            "app.services.llm_service.settings"
-        ) as mock_settings:
+        with (
+            patch("app.services.llm_service.get_provider", return_value=None),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
             chunks = []
@@ -95,9 +96,10 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_without_gemini_key(self):
         """sans cle api gemini, le service doit retourner un message d'erreur"""
-        with patch("app.services.llm_service.get_provider", return_value=None), patch(
-            "app.services.llm_service.settings"
-        ) as mock_settings:
+        with (
+            patch("app.services.llm_service.get_provider", return_value=None),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
             chunks = []
@@ -110,14 +112,16 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_groq_streaming_returns_chunks(self):
         """avec une cle api groq, le service doit streamer les chunks"""
+
         class FakeProvider:
-            async def stream_response(self, prompt, system_message, model):
+            async def stream_response(self, prompt, system_message, model, **kwargs):
                 for text in ["Hello", " World", "!"]:
                     yield text, 1, 1
 
-        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
-            "app.services.llm_service.settings"
-        ) as mock_settings:
+        with (
+            patch("app.services.llm_service.get_provider", return_value=FakeProvider()),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
 
@@ -130,15 +134,17 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_handles_exception_gracefully(self):
         """en cas d'erreur reseau, le service doit retourner un message d'erreur"""
+
         class FakeProvider:
-            async def stream_response(self, prompt, system_message, model):
+            async def stream_response(self, prompt, system_message, model, **kwargs):
                 if False:
                     yield "", 0, 0
                 raise Exception("connection timeout")
 
-        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
-            "app.services.llm_service.settings"
-        ) as mock_settings:
+        with (
+            patch("app.services.llm_service.get_provider", return_value=FakeProvider()),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
 
@@ -152,15 +158,17 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_skips_empty_chunks(self):
         """les chunks sans contenu (delta.content=None) doivent etre ignores"""
+
         class FakeProvider:
-            async def stream_response(self, prompt, system_message, model):
+            async def stream_response(self, prompt, system_message, model, **kwargs):
                 yield "Hello", 1, 1
                 yield "", 0, 0
                 yield " World", 1, 1
 
-        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
-            "app.services.llm_service.settings"
-        ) as mock_settings:
+        with (
+            patch("app.services.llm_service.get_provider", return_value=FakeProvider()),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
 

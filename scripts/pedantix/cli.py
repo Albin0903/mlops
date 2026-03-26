@@ -16,17 +16,22 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from scripts.pedantix.cache import get_cached_results, init_db, save_results_to_cache
-from scripts.pedantix.client_pedantix import BASE_URL, extract_homepage_metadata, parse_guess_result, score_word_raw
-from scripts.pedantix.client_wikipedia import resolve_wikipedia_title, search_wikipedia_titles
-from scripts.pedantix.intelligence import (
+from scripts.pedantix.cache import get_cached_results, init_db, save_results_to_cache  # noqa: E402
+from scripts.pedantix.client_pedantix import (  # noqa: E402
+    BASE_URL,
+    extract_homepage_metadata,
+    parse_guess_result,
+    score_word_raw,
+)
+from scripts.pedantix.client_wikipedia import search_wikipedia_titles  # noqa: E402
+from scripts.pedantix.intelligence import (  # noqa: E402
     ask_llm_candidates,
     ask_llm_probes,
     build_fallback_probes,
     render_virtual_window,
     summarize_results,
 )
-from scripts.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text
+from scripts.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text  # noqa: E402
 
 DEFAULT_INITIAL_PROBES = [
     "le",
@@ -280,8 +285,28 @@ async def score_words_batch(
 
     return results, solution
 
+class SolverContext:
+    def __init__(
+        self, client: httpx.AsyncClient, db_conn: sqlite3.Connection, puzzle_number: int, verbose: bool = False
+    ):
+        self.client = client
+        self.db_conn = db_conn
+        self.puzzle_number = puzzle_number
+        self.verbose = verbose
+        self.all_results: list[GuessResult] = []
+        self.known_words: set[str] = set()
 
-async def solve_pedantix(provider: str, max_candidates: int, max_iterations: int, verbose: bool, thinking: str) -> None:
+    async def score_batch(self, words: list[str], tag: str = "probe") -> tuple[list[GuessResult], GuessResult | None]:
+        results, solution = await score_words_batch(
+            self.client, self.puzzle_number, words, self.known_words, self.db_conn, verbose=self.verbose, tag=tag
+        )
+        self.all_results.extend(results)
+        return results, solution
+
+
+async def solve_pedantix(
+    provider: str, max_candidates: int, max_iterations: int, verbose: bool, thinking: str, mode: str = "classic"
+) -> None:
     limits = httpx.Limits(max_connections=50, max_keepalive_connections=20)
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -302,194 +327,115 @@ async def solve_pedantix(provider: str, max_candidates: int, max_iterations: int
         print(f"Thinking       : {thinking}")
         print(f"Aperçu masque  : {masked_preview[:200]}...\n")
 
-        all_results: list[GuessResult] = []
-        known_words: set[str] = set()
-        tested_titles: list[str] = []
-        searched_queries: set[str] = set()
-        title_word_count = len(title_lengths)
+        db_conn = init_db()
+        ctx = SolverContext(client, db_conn, puzzle_number, verbose=verbose)
 
-        def check_victory(summary: dict[str, Any]) -> bool:
-            exacts = summary.get("exact_terms", [])
+        if mode == "agent":
+            from scripts.pedantix.agent import PedantixAgent
+
+            agent = PedantixAgent(
+                puzzle_number, title_lengths, slot_lengths, masked_preview, ctx, provider=provider, thinking=thinking
+            )
+            await agent.run()
+            return
+
+        def check_victory(summary: dict[str, Any] | None) -> bool:
+            if not summary:
+                return False
+            exacts = summary.get("exact_terms") or []
             covered_positions = set()
             for item in exacts:
-                for p in item["positions"]:
-                    if p < title_word_count:
+                if not isinstance(item, dict):
+                    continue
+                p_list = item.get("positions")
+                if p_list is None:
+                    continue
+                for p in p_list:
+                    if p < len(title_lengths):
                         covered_positions.add(p)
-            return len(covered_positions) == title_word_count
-
-        def get_current_title(summary: dict[str, Any]) -> str:
-            exacts = summary.get("exact_terms", [])
-            pos_to_word = {}
-            for item in exacts:
-                for p in item["positions"]:
-                    if p < title_word_count:
-                        pos_to_word[p] = item["term"]
-            return " ".join([pos_to_word.get(i, "?") for i in range(title_word_count)])
-
-        db_conn = init_db()
+            return len(covered_positions) == len(title_lengths)
 
         # Phase 1
         print("info: Phase 1 : Sondes initiales")
-        results, solution = await score_words_batch(
-            client, puzzle_number, DEFAULT_INITIAL_PROBES, known_words, db_conn, verbose=verbose, tag="init"
-        )
-        all_results.extend(results)
-        summary = summarize_results(all_results)
+        results, solution = await ctx.score_batch(DEFAULT_INITIAL_PROBES, tag="init")
+        summary = summarize_results(ctx.all_results)
         if solution or check_victory(summary):
-            sol_str = solution.solution if solution else get_current_title(summary)
-            source_detail = f"mot testé: {solution.word}" if solution else "reconstruction"
-            print_solution(GuessResult(sol_str, None, {}, {}, True, sol_str), "phase initiale", source_detail)
+            print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), "phase initiale")
             return
 
         print_exact_hits(summary)
         print_probe_scores(summary)
-        print_window(slot_lengths, summary, "après phase 1")
 
         # Phase 2
         print("info: Phase 2 : Sondes heuristiques")
-        fallback = build_fallback_probes(summary)
-        results, solution = await score_words_batch(
-            client, puzzle_number, fallback, known_words, db_conn, verbose=verbose, tag="heur"
-        )
-        all_results.extend(results)
-        summary = summarize_results(all_results)
+        results, solution = await ctx.score_batch(build_fallback_probes(summary), tag="heur")
+        summary = summarize_results(ctx.all_results)
         if solution or check_victory(summary):
-            sol_str = solution.solution if solution else get_current_title(summary)
-            source_detail = f"mot testé: {solution.word}" if solution else "reconstruction"
-            print_solution(GuessResult(sol_str, None, {}, {}, True, sol_str), "phase heuristique", source_detail)
+            print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), "phase heuristique")
             return
 
-        print_exact_hits(summary)
-        print_probe_scores(summary)
+        tested_titles = []
+        searched_queries = set()
 
-        # Boucle
+        # Boucle Classique
         for iteration in range(1, max_iterations + 1):
             print(f"info: ITÉRATION {iteration}/{max_iterations}")
-
-            print("info: Phase 3 : Sondes LLM")
             probe_plan = await ask_llm_probes(
-                title_lengths, masked_preview, summary, provider, known_words, thinking=thinking
+                title_lengths, masked_preview, summary, provider, ctx.known_words, thinking=thinking
             )
             llm_probes = probe_plan.get("next_probes", [])
             llm_queries = [q for q in probe_plan.get("wikipedia_queries", []) if isinstance(q, str) and q.strip()]
 
-            hypothesis_str = probe_plan.get("hypothesis", "")
-            print(f"  Hypothèse: {hypothesis_str if hypothesis_str else 'N/A'}")
-
-            hypothesis_words = extract_words_from_phrase(hypothesis_str)
-            if hypothesis_words:
-                llm_probes = hypothesis_words + llm_probes
-
-            hot_words = [p["word"] for p in summary.get("best_probes", []) if p.get("best_score", 0) >= 38.0]
-            if hot_words:
-                llm_probes = hot_words[:10] + llm_probes
-
-            print(f"  Sondes: {', '.join(llm_probes[:15])}...")
-
-            results, solution = await score_words_batch(
-                client, puzzle_number, llm_probes, known_words, db_conn, verbose=verbose, tag=f"llm-{iteration}"
-            )
-            all_results.extend(results)
-            summary = summarize_results(all_results)
+            results, solution = await ctx.score_batch(llm_probes, tag=f"llm-{iteration}")
+            summary = summarize_results(ctx.all_results)
             if solution or check_victory(summary):
-                sol_str = solution.solution if solution else get_current_title(summary)
-                print_solution(GuessResult(sol_str, None, {}, {}, True, sol_str), f"sondes LLM itération {iteration}")
+                print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), f"sondes LLM {iteration}")
                 return
 
-            # Phase 3b : Wiki
-            new_queries = [
-                q
-                for q in llm_queries
-                if normalize_text(q) not in searched_queries and len(normalize_text(q).split()) <= 5
-            ]
+            # Wiki
+            new_queries = [q for q in llm_queries if normalize_text(q) not in searched_queries]
             for q in new_queries:
                 searched_queries.add(normalize_text(q))
 
             if new_queries:
-                print(f"\n  Recherche Wikipedia: {new_queries}")
-                wiki_titles = await search_wikipedia_titles(client, new_queries[:8], per_query=8)
+                wiki_titles = await search_wikipedia_titles(client, new_queries[:5], per_query=5)
                 wiki_candidates = [t for t in wiki_titles if t not in tested_titles][:max_candidates]
-
                 if wiki_candidates:
-                    print(f"  Candidats Wikipedia : {wiki_candidates[:10]}")
-                    words_to_test = []
+                    print(f"  Candidats Wiki: {wiki_candidates[:5]}")
+                    words = []
                     for c in wiki_candidates:
-                        words_to_test.extend(extract_words_from_phrase(c))
-
-                    results, solution = await score_words_batch(
-                        client,
-                        puzzle_number,
-                        words_to_test,
-                        known_words,
-                        db_conn,
-                        concurrency=12,
-                        verbose=verbose,
-                        tag=f"wiki-{iteration}",
-                    )
-                    all_results.extend(results)
+                        words.extend(extract_words_from_phrase(c))
+                    results, solution = await ctx.score_batch(words, tag=f"wiki-{iteration}")
                     tested_titles.extend(wiki_candidates)
-                    summary = summarize_results(all_results)
-                    if solution or check_victory(summary):
-                        sol_str = solution.solution if solution else get_current_title(summary)
-                        print_solution(GuessResult(sol_str, None, {}, {}, True, sol_str), f"Wiki {iteration}")
+                    summary = summarize_results(ctx.all_results)
+                    if solution:
+                        print_solution(solution, f"Wiki {iteration}")
                         return
 
-            # Phase 4 : Candidats LLM
-            print("info: Phase 4 : Candidats LLM")
+            # Candidates
             llm_candidates = await ask_llm_candidates(
                 title_lengths, masked_preview, summary, tested_titles, provider, thinking=thinking
             )
-
-            valid = []
-            for c in llm_candidates:
-                if len(valid) >= max_candidates:
-                    break
-                if c not in tested_titles and normalize_text(c) not in known_words:
-                    resolved_title = await resolve_wikipedia_title(client, c)
-                    if resolved_title:
-                        valid.append(resolved_title)
-                    else:
-                        tested_titles.append(c)
-
-            if valid:
-                print(f"  Candidats Wikipedia validés à tester ({len(valid)}):")
-                for c in valid[:15]:
-                    print(f"    - {c}")
-
-                words_to_test = []
-                for c in valid:
-                    words_to_test.extend(extract_words_from_phrase(c))
-
-                results, solution = await score_words_batch(
-                    client,
-                    puzzle_number,
-                    words_to_test,
-                    known_words,
-                    db_conn,
-                    concurrency=10,
-                    verbose=verbose,
-                    tag=f"cand-{iteration}",
-                )
-                all_results.extend(results)
-                tested_titles.extend(valid)
-                summary = summarize_results(all_results)
-                if solution or check_victory(summary):
-                    sol_str = solution.solution if solution else get_current_title(summary)
-                    print_solution(GuessResult(sol_str, None, {}, {}, True, sol_str), f"Candidats {iteration}")
+            if llm_candidates:
+                words = []
+                for c in llm_candidates[:max_candidates]:
+                    words.extend(extract_words_from_phrase(c))
+                results, solution = await ctx.score_batch(words, tag=f"cand-{iteration}")
+                tested_titles.extend(llm_candidates)
+                summary = summarize_results(ctx.all_results)
+                if solution:
+                    print_solution(solution, f"Candidats {iteration}")
                     return
-            else:
-                print("  Aucun candidat valide proposé par le LLM.")
 
             print_exact_hits(summary)
             print_probe_scores(summary)
-            print_window(slot_lengths, summary, f"fin itération {iteration}")
-            print(f"\n  Aucune solution trouvée à l'itération {iteration}.\n")
 
         print("info: ÉCHEC : Aucun candidat n'a résolu la page.")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Solveur Pédantix simplifié avec IA")
+    parser = argparse.ArgumentParser(description="Solveur Pédantix avec mode Agent")
+    parser.add_argument("--mode", default="classic", choices=["classic", "agent"])
     parser.add_argument(
         "--provider",
         default="groq",
@@ -505,8 +451,8 @@ def parse_args() -> argparse.Namespace:
             "ollama-mini",
         ],
     )
-    parser.add_argument("--max-candidates", type=int, default=30)
-    parser.add_argument("--max-iterations", type=int, default=8)
+    parser.add_argument("--max-candidates", type=int, default=20)
+    parser.add_argument("--max-iterations", type=int, default=5)
     parser.add_argument(
         "--thinking",
         default=None,
@@ -526,5 +472,7 @@ if __name__ == "__main__":
             max_iterations=args.max_iterations,
             verbose=args.verbose,
             thinking=args.thinking or "off",
+            mode=args.mode,
         )
     )
+

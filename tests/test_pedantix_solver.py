@@ -31,13 +31,17 @@ class FakeClient:
 async def test_resolve_wikipedia_title_accepts_canonical_search_result():
     client = FakeClient(
         {
-            ("query", "Panthéon Rome"): FakeResponse({"query": {"pages": {"-1": {"ns": 0, "title": "Panthéon Rome", "missing": ""}}}}),
-            ("opensearch", "Panthéon Rome"): FakeResponse([
-                "Panthéon Rome",
-                ["Panthéon (Rome)", "Panthéon romain"],
-                ["", ""],
-                ["", ""],
-            ]),
+            ("query", "Panthéon Rome"): FakeResponse(
+                {"query": {"pages": {"-1": {"ns": 0, "title": "Panthéon Rome", "missing": ""}}}}
+            ),
+            ("opensearch", "Panthéon Rome"): FakeResponse(
+                [
+                    "Panthéon Rome",
+                    ["Panthéon (Rome)", "Panthéon romain"],
+                    ["", ""],
+                    ["", ""],
+                ]
+            ),
         }
     )
 
@@ -51,7 +55,9 @@ async def test_resolve_wikipedia_title_accepts_canonical_search_result():
 async def test_resolve_wikipedia_title_returns_exact_page_title():
     client = FakeClient(
         {
-            ("query", "Panthéon (Rome)"): FakeResponse({"query": {"pages": {"96403": {"pageid": 96403, "ns": 0, "title": "Panthéon (Rome)"}}}}),
+            ("query", "Panthéon (Rome)"): FakeResponse(
+                {"query": {"pages": {"96403": {"pageid": 96403, "ns": 0, "title": "Panthéon (Rome)"}}}}
+            ),
         }
     )
 
