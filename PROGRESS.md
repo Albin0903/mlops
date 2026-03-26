@@ -1,6 +1,6 @@
 # Feuille de route et suivi de projet
 
-Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente un domaine de competences cible pour un profil MLOps / DevOps / AI Engineer.
+Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable vitrine technologique CV pour un futur ingenieur Data/MLOps ex-Societe Generale, chaque sprint represente un domaine d'expertise cible : Infrastructure (Terraform/K8s), Architectures Agentiques, et DevOps industriel.
 
 ---
 
@@ -116,14 +116,30 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente u
 - [ ] Integration dans le workflow de dev quotidien
 
 ### Automatisation des processus
-- [ ] Makefile/Justfile : `make dev`, `make deploy`, `make benchmark`, `make monitoring`
+- [x] Makefile/Justfile : `make dev`, `make deploy`, `make benchmark`, `make monitoring`
 - [ ] Script de demo rapide (`scripts/demo.sh`)
 - [ ] Script one-command : build + load + deploy + port-forward
 - [ ] Pre-commit : ajouter validation des manifests K8s (kubeval/kubeconform)
 
 ---
 
-## Sprint 6 : Excellence Operationnelle & AI Reliability
+## Sprint 6 : Ingénierie Agentique & Workflows Autonomes (Pédantix & Tusmo)
+*Competences visees : Function Calling, ReAct Agents, Automatisation (RPA/Selenium), LLOps avance*
+
+### Refactoring Agentique (Pédantix)
+- [ ] Transformer la logique `solve_pedantix.py` en framework Agentique (ReAct).
+- [ ] Implementer le Function Calling dans `app/services/llm_service.py` (`search_wikipedia`, `guess_word`).
+- [ ] Monitorer les traces de reflexion et les appels d'outils via Langfuse.
+
+### Module Tusmo (Solveur IA & RPA)
+- [ ] Integrer le moteur d'entropie (`tusmo/final.py`) comme service backend `app/services/tusmo_service.py`.
+- [ ] Creer des outils interactifs (SQL/regex) permettant a l'IA de reduire l'espace de recherche.
+- [ ] Connecter le bot automatise Selenium (`tusmo/solve.py`) pour jouer les parties de maniere 100% autonome.
+- [ ] Dashboard Grafana (Metriques MLOps) : tracker la performance de l'agent (taux de succes, nombre de coups moyen).
+
+---
+
+## Sprint 7 : Excellence Operationnelle & AI Reliability
 *Competences visees : AI safety, caching, supply chain security*
 
 ### Performance & FinOps (Caching)
@@ -148,7 +164,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente u
 
 ---
 
-## Sprint 7 : Valorisation & Portfolio
+## Sprint 8 : Valorisation & Portfolio
 *Competences visees : communication technique, documentation pro*
 
 ### Documentation
@@ -162,7 +178,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente u
 - [ ] Screenshots Grafana + Langfuse dans le README
 
 ### Packaging
-- [ ] Nettoyage code (dead code, TODOs, type hints complets)
+- [x] Nettoyage code (dead code, TODOs, type hints complets)
 - [ ] `CONTRIBUTING.md`
 - [ ] Compatibilite multi-OS verifiee (`pathlib`)
 
@@ -174,3 +190,4 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Chaque sprint represente u
 - [ ] Qualite : type hints + docstrings sur chaque fonction
 - [ ] Git : commits atomiques (`feat:`, `fix:`, `docs:`, `ci:`)
 - [ ] Linting : Ruff avant chaque commit (pre-commit)
+

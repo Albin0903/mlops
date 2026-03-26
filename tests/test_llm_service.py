@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.services.llm_service import PROVIDER_MODELS, SYSTEM_PROMPTS, LLMService
+from app.services.llm.ollama import _extract_chunk_content, _parse_model_size_billion, _select_num_ctx, _split_thinking_content
 
 
 class TestSystemPrompts:
@@ -49,6 +50,8 @@ class TestProviderConfig:
         """chaque provider doit avoir un modele associe"""
         assert "groq" in PROVIDER_MODELS
         assert "gemini" in PROVIDER_MODELS
+        assert "ollama-mini" in PROVIDER_MODELS
+        assert PROVIDER_MODELS["ollama-mini"] == "qwen3.5:0.8b"
 
 
 class TestStreamingResponse:
@@ -72,9 +75,9 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_without_groq_key(self):
         """sans cle api groq, le service doit retourner un message d'erreur"""
-        with patch("app.services.llm_service.settings") as mock_settings:
-            mock_settings.groq_api_key = None
-            mock_settings.gemini_api_key = "fake"  # pragma: allowlist secret
+        with patch("app.services.llm_service.get_provider", return_value=None), patch(
+            "app.services.llm_service.settings"
+        ) as mock_settings:
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
             chunks = []
@@ -82,14 +85,14 @@ class TestStreamingResponse:
                 chunks.append(chunk)
 
             assert len(chunks) == 1
-            assert "cle api groq" in chunks[0]
+            assert "provider groq" in chunks[0]
 
     @pytest.mark.asyncio
     async def test_streaming_without_gemini_key(self):
         """sans cle api gemini, le service doit retourner un message d'erreur"""
-        with patch("app.services.llm_service.settings") as mock_settings:
-            mock_settings.groq_api_key = "fake"  # pragma: allowlist secret
-            mock_settings.gemini_api_key = None
+        with patch("app.services.llm_service.get_provider", return_value=None), patch(
+            "app.services.llm_service.settings"
+        ) as mock_settings:
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
             chunks = []
@@ -97,29 +100,21 @@ class TestStreamingResponse:
                 chunks.append(chunk)
 
             assert len(chunks) == 1
-            assert "cle api gemini" in chunks[0]
+            assert "provider gemini" in chunks[0]
 
     @pytest.mark.asyncio
     async def test_groq_streaming_returns_chunks(self):
         """avec une cle api groq, le service doit streamer les chunks"""
-        mock_chunks = []
-        for text in ["Hello", " World", "!"]:
-            mock_chunk = MagicMock()
-            mock_chunk.choices = [MagicMock()]
-            mock_chunk.choices[0].delta.content = text
-            mock_chunk.x_groq = None
-            mock_chunks.append(mock_chunk)
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model):
+                for text in ["Hello", " World", "!"]:
+                    yield text, 1, 1
 
-        async def mock_stream():
-            for chunk in mock_chunks:
-                yield chunk
-
-        with patch("app.services.llm_service.settings") as mock_settings:
-            mock_settings.groq_api_key = "fake-key"  # pragma: allowlist secret
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
+            "app.services.llm_service.settings"
+        ) as mock_settings:
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
-            service.groq_client = MagicMock()
-            service._create_groq_stream = AsyncMock(return_value=mock_stream())
 
             chunks = []
             async for chunk in service.get_streaming_response("test", "system", provider="groq"):
@@ -130,12 +125,17 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_handles_exception_gracefully(self):
         """en cas d'erreur reseau, le service doit retourner un message d'erreur"""
-        with patch("app.services.llm_service.settings") as mock_settings:
-            mock_settings.groq_api_key = "fake-key"  # pragma: allowlist secret
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model):
+                if False:
+                    yield "", 0, 0
+                raise Exception("connection timeout")
+
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
+            "app.services.llm_service.settings"
+        ) as mock_settings:
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
-            service.groq_client = MagicMock()
-            service._create_groq_stream = AsyncMock(side_effect=Exception("connection timeout"))
 
             chunks = []
             async for chunk in service.get_streaming_response("test", "system", provider="groq"):
@@ -147,38 +147,54 @@ class TestStreamingResponse:
     @pytest.mark.asyncio
     async def test_streaming_skips_empty_chunks(self):
         """les chunks sans contenu (delta.content=None) doivent etre ignores"""
-        mock_chunks = []
-        chunk1 = MagicMock()
-        chunk1.choices = [MagicMock()]
-        chunk1.choices[0].delta.content = "Hello"
-        chunk1.x_groq = None
-        mock_chunks.append(chunk1)
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model):
+                yield "Hello", 1, 1
+                yield "", 0, 0
+                yield " World", 1, 1
 
-        chunk_empty = MagicMock()
-        chunk_empty.choices = [MagicMock()]
-        chunk_empty.choices[0].delta.content = None
-        chunk_empty.x_groq = None
-        mock_chunks.append(chunk_empty)
-
-        chunk2 = MagicMock()
-        chunk2.choices = [MagicMock()]
-        chunk2.choices[0].delta.content = " World"
-        chunk2.x_groq = None
-        mock_chunks.append(chunk2)
-
-        async def mock_stream():
-            for chunk in mock_chunks:
-                yield chunk
-
-        with patch("app.services.llm_service.settings") as mock_settings:
-            mock_settings.groq_api_key = "fake-key"  # pragma: allowlist secret
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()), patch(
+            "app.services.llm_service.settings"
+        ) as mock_settings:
             mock_settings.langfuse_enabled = False
             service = LLMService.__new__(LLMService)
-            service.groq_client = MagicMock()
-            service._create_groq_stream = AsyncMock(return_value=mock_stream())
 
             chunks = []
             async for chunk in service.get_streaming_response("test", "system", provider="groq"):
                 chunks.append(chunk)
 
             assert chunks == ["Hello", " World"]
+
+
+class TestOllamaChunkParsing:
+    def test_extract_chunk_content_supports_chat_payload(self):
+        payload = {"message": {"role": "assistant", "content": "Bonjour"}}
+
+        assert _extract_chunk_content(payload) == "Bonjour"
+
+    def test_extract_chunk_content_supports_generate_payload(self):
+        payload = {"response": "Bonjour"}
+
+        assert _extract_chunk_content(payload) == "Bonjour"
+
+    def test_split_thinking_content(self):
+        thoughts, visible = _split_thinking_content("<think>je réfléchis</think>Réponse finale")
+
+        assert thoughts == ["je réfléchis"]
+        assert visible == "Réponse finale"
+
+
+class TestOllamaContextSizing:
+    def test_parse_model_size_billion(self):
+        assert _parse_model_size_billion("qwen3.5:2b") == 2.0
+        assert _parse_model_size_billion("qwen3.5:9b") == 9.0
+
+    def test_select_num_ctx_for_small_model_on_6gb(self, monkeypatch):
+        monkeypatch.setattr("app.services.llm.ollama._detect_total_vram_mb", lambda: 6144)
+
+        assert _select_num_ctx("qwen3.5:2b") == 8192
+
+    def test_select_num_ctx_for_9b_model_on_6gb(self, monkeypatch):
+        monkeypatch.setattr("app.services.llm.ollama._detect_total_vram_mb", lambda: 6144)
+
+        assert _select_num_ctx("qwen3.5:9b") == 4096

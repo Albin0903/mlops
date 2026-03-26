@@ -5,14 +5,14 @@ Ce fichier regroupe les idees d'ameliorations et les taches non-bloquantes. Pour
 ---
 
 ## Quick Wins (< 1h chacun)
-- [ ] Nettoyer `config.py` : retirer `openai_api_key` et `mistral_api_key` (dead code, jamais utilises)
+- [x] Nettoyer `config.py` : retirer `openai_api_key` et `mistral_api_key` (dead code, jamais utilises)
 - [ ] Ajouter un screenshot du dashboard Grafana dans le README
 - [ ] Ajouter un screenshot du dashboard Langfuse dans le README
 - [ ] Tester `.devcontainer` sur GitHub Codespaces (lancement en un clic)
-- [ ] Corriger le Dockerfile : Python 3.12 dans le build vs 3.13 dans la CI (aligner)
+- [x] Corriger le Dockerfile : Python 3.12 dans le build vs 3.13 dans la CI (aligner)
 
 ## Automatisation DX (Developer Experience)
-- [ ] **Makefile / Justfile** : centraliser les commandes sous des alias simples
+- [x] **Makefile / Justfile** : centraliser les commandes sous des alias simples
   - `make dev` : build + load + deploy + port-forward
   - `make benchmark` : locust avec rapport HTML
   - `make monitoring` : port-forward Grafana + API
