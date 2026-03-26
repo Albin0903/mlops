@@ -3,12 +3,17 @@ tests/test_llm_service.py — tests du service llm avec mocking de l'api groq et
 aucun appel reel n'est effectue.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
+from app.services.llm.ollama import (
+    _extract_chunk_content,
+    _parse_model_size_billion,
+    _select_num_ctx,
+    _split_thinking_content,
+)
 from app.services.llm_service import PROVIDER_MODELS, SYSTEM_PROMPTS, LLMService
-from app.services.llm.ollama import _extract_chunk_content, _parse_model_size_billion, _select_num_ctx, _split_thinking_content
 
 
 class TestSystemPrompts:

@@ -33,7 +33,7 @@ class TusmoSolver:
                 self.lettres_mal_placees[i].add(lettre)
                 compteur_local[lettre] += 1
 
-        for i, (lettre, code) in enumerate(zip(mot_joue, motif_reponse, strict=False)):
+        for _, (lettre, code) in enumerate(zip(mot_joue, motif_reponse, strict=False)):
             if code == "_" or code == " ":
                 if compteur_local[lettre] > 0:
                     self.compteur_max_lettres[lettre] = compteur_local[lettre]
