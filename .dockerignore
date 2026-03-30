@@ -18,3 +18,4 @@ docs/
 k8s/
 scripts/
 tests/
+*.db

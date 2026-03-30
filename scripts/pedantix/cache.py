@@ -1,10 +1,13 @@
 import json
+import os
 import sqlite3
 from typing import Any
 
 from scripts.pedantix.models import normalize_text
 
-CACHE_DB_PATH = "pedantix_cache.db"
+DATA_DIR = "data"
+os.makedirs(DATA_DIR, exist_ok=True)
+CACHE_DB_PATH = os.path.join(DATA_DIR, "pedantix_cache.db")
 
 
 def init_db() -> sqlite3.Connection:
