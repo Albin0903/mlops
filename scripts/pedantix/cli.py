@@ -334,7 +334,7 @@ async def solve_pedantix(
             from scripts.pedantix.agent import PedantixAgent
 
             agent = PedantixAgent(
-                puzzle_number, title_lengths, slot_lengths, masked_preview, ctx, provider=provider, thinking=thinking
+                puzzle_number, title_lengths, slot_lengths, masked_preview, ctx, provider=provider, thinking=thinking, max_turns=max_iterations
             )
             await agent.run()
             return

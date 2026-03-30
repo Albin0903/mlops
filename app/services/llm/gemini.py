@@ -56,6 +56,34 @@ class GeminiProvider(BaseLLMProvider):
                 formatted_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=content)]))
             elif role == "assistant" and content:
                 formatted_contents.append(types.Content(role="model", parts=[types.Part.from_text(text=content)]))
+            elif role == "assistant" and "tool_calls" in msg:
+                # Handle agent thought/tool request
+                parts = []
+                if content:
+                    parts.append(types.Part.from_text(text=content))
+                for call in msg.get("tool_calls", []):
+                    args_dict = json.loads(call["function"]["arguments"]) if isinstance(call["function"].get("arguments"), str) else call["function"].get("arguments", {})
+                    parts.append(types.Part.from_function_call(name=call["function"]["name"], args=args_dict))
+                if parts:
+                    formatted_contents.append(types.Content(role="model", parts=parts))
+            elif role == "tool":
+                # Handle tool response
+                import json
+                try:
+                    response_dict = json.loads(content) if isinstance(content, str) else content
+                except Exception:
+                    response_dict = {"result": content}
+                
+                # Gemini expects a dict for response, wrap it if it's a list
+                if isinstance(response_dict, list):
+                    response_dict = {"results": response_dict}
+                    
+                formatted_contents.append(
+                    types.Content(
+                        role="user", 
+                        parts=[types.Part.from_function_response(name=msg.get("name", "unknown"), response=response_dict)]
+                    )
+                )
 
         config_kwargs = {}
         if system_instruction:
