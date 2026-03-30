@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from app.services.llm_service import llm_service
-from scripts.pedantix.intelligence import summarize_results
+from scripts.pedantix.intelligence import extract_best_score, summarize_results
 from scripts.pedantix.models import extract_words_from_phrase
 
 # Definition des schemas d'outils pour les LLMs (format OpenAI/Groq/Gemini)
@@ -85,16 +85,17 @@ class PedantixAgent:
 
         self.system_message = (
             "Tu es un agent expert chargé de résoudre le puzzle Pédantix. "
-            "Pédantix consiste à deviner une page Wikipedia dont le texte est masqué. "
-            "Tu as accès à des outils pour tester des mots, chercher sur Wikipedia et analyser l'état du jeu. "
-            "Ton but est de trouver le titre exact de la page.\n\n"
-            "Stratégie :\n"
-            "1. Commence par utiliser `get_game_state` pour voir ce qui est déjà connu.\n"
-            "2. Teste des mots communs ou thématiques avec `guess_words`.\n"
-            "3. Utilise les indices de proximité pour affiner ton hypothèse.\n"
-            "4. Cherche des candidats sur Wikipedia avec `search_wikipedia`.\n"
-            "5. Valide tes candidats avec `analyze_wikipedia_page`.\n\n"
-            "Réponds avec ton raisonnement (Thought) puis appelle un outil."
+            "But : Deviner le titre d'une page Wikipedia masquée.\n\n"
+            "Outils disponibles :\n"
+            "- `get_game_state` : État actuel du jeu.\n"
+            "- `guess_words` : Tester une liste de mots.\n"
+            "- `search_wikipedia` : Trouver des candidats par thématique.\n"
+            "- `analyze_wikipedia_page` : Vérifier la structure d'un titre.\n\n"
+            "Règles :\n"
+            "1. Ne répète jamais les mêmes mots inutilement.\n"
+            "2. Sois concis dans tes réflexions (Thought).\n"
+            "3. Utilise `get_game_state` en premier.\n"
+            "4. Si tu es bloqué, cherche des thèmes larges."
         )
         self.history = [{"role": "system", "content": self.system_message}]
         self.max_turns = 15
@@ -102,8 +103,8 @@ class PedantixAgent:
     async def run(self):
         print(f"info: Démarrage de l'agent ReAct ({self.provider})...")
 
-        # Premier message utilisateur pour lancer la machine
-        self.history.append({"role": "user", "content": "Analyse l'état actuel et propose une première série de mots à tester."})
+        # Le premier message utilisateur suffit, pas besoin de ré-appuyer à chaque tour.
+        self.history.append({"role": "user", "content": "Analyse l'état initial et commence la résolution."})
 
         for turn in range(1, self.max_turns + 1):
             print(f"\ninfo: --- Tour Agent {turn}/{self.max_turns} ---")
@@ -117,40 +118,36 @@ class PedantixAgent:
             )
 
             if response_data["type"] == "text":
-                content = response_data["content"] or "Pensée vide."
+                content = response_data["content"] or "..."
                 print(f"Agent Thought: {content}")
                 self.history.append({"role": "assistant", "content": content})
-                # On ajoute une relance utilisateur si l'agent ne propose pas d'action
-                self.history.append({"role": "user", "content": "D'accord, mais quelle action (outil) souhaites-tu entreprendre maintenant ?"})
                 continue
 
             elif response_data["type"] == "tool_calls":
-                # 1. Message Assistant avec les appels d'outils
+                # 1. Message Assistant obligatoire avec les tool_calls
                 assistant_msg = {
                     "role": "assistant",
-                    "content": response_data.get("content") or "Je vais utiliser des outils pour avancer.",
+                    "content": response_data.get("content") or "Action en cours...",
                     "tool_calls": []
                 }
 
+                tool_requests = []
                 for call in response_data["calls"]:
                     name = call["name"]
                     args = call["args"] or {}
-                    call_id = call.get("id") or f"call_{turn}_{name}"
+                    call_id = f"call_{turn}_{name}" # Génère un ID stable
 
                     assistant_msg["tool_calls"].append({
                         "id": call_id,
                         "type": "function",
                         "function": {"name": name, "arguments": json.dumps(args)}
                     })
+                    tool_requests.append((name, args, call_id))
 
                 self.history.append(assistant_msg)
 
-                # 2. Exécution et messages Tool
-                for call in response_data["calls"]:
-                    name = call["name"]
-                    args = call["args"] or {}
-                    call_id = call.get("id") or f"call_{turn}_{name}"
-
+                # 2. Exécution des outils et ajout des résultats
+                for name, args, call_id in tool_requests:
                     print(f"info: Appel outil: {name}({args})")
                     observation = await self.execute_tool(name, args)
 
@@ -162,12 +159,9 @@ class PedantixAgent:
                     })
 
                     if name == "guess_words":
-                        if any(r.get("solved") for r in (observation if isinstance(observation, list) else [])):
+                        if isinstance(observation, list) and any(r.get("solved") for r in observation):
                             print("info: Solution trouvée par l'agent !")
                             return
-
-                # Relance pour la suite
-                self.history.append({"role": "user", "content": "Voici les résultats des outils. Quelle est ton analyse et ta prochaine étape ?"})
 
     async def execute_tool(self, name: str, args: dict[str, Any] | None) -> Any:
         args = args or {}
@@ -185,7 +179,12 @@ class PedantixAgent:
             words = args.get("words", [])
             results, solution = await self.context.score_batch(words, tag="agent")
             return [
-                {"word": r.word, "solved": r.solved, "exact_hits": len(r.exact_hits), "best_approx": r.best_approx_score}
+                {
+                    "word": r.word,
+                    "solved": r.solved,
+                    "exact_hits": len(r.exact_hits),
+                    "best_approx": extract_best_score(r.approx_hits)
+                }
                 for r in results
             ]
 

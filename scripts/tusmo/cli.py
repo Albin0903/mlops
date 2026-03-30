@@ -1,5 +1,6 @@
 import argparse
 
+from scripts.tusmo.agent import TusmoAgent
 from scripts.tusmo.bot import TusmoBot
 from scripts.tusmo.dictionary import TusmoDictionary
 from scripts.tusmo.entropy import TusmoSolver
@@ -106,18 +107,34 @@ def bot_solve(room_url: str) -> None:
         bot.close()
 
 
+async def agent_solve(longueur: int, lettre_depart: str, provider: str, thinking: str, max_turns: int = 8) -> None:
+    db = TusmoDictionary()
+    solver = TusmoSolver(longueur, lettre_depart, db)
+    agent = TusmoAgent(solver, provider=provider, thinking=thinking)
+    agent.max_turns = max_turns
+
+    print(f"info: Démarrage Tusmo Agent ({provider}).")
+    await agent.run()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser("Solveur Tusmo")
-    parser.add_argument("--mode", choices=["interactive", "bot"], default="interactive")
+    parser.add_argument("--mode", choices=["interactive", "bot", "agent"], default="interactive")
     parser.add_argument("--longueur", type=int, default=6)
     parser.add_argument("--lettre", type=str, default="a")
     parser.add_argument("--room", type=str, default="")
+    parser.add_argument("--provider", type=str, default="groq")
+    parser.add_argument("--thinking", choices=["off", "low", "medium", "high"], default="off")
+    parser.add_argument("--max-turns", type=int, default=8)
     args = parser.parse_args()
 
     if args.mode == "interactive":
         interactive_solve(args.longueur, args.lettre)
-    else:
+    elif args.mode == "bot":
         bot_solve(args.room)
+    elif args.mode == "agent":
+        import asyncio
+        asyncio.run(agent_solve(args.longueur, args.lettre, args.provider, args.thinking, args.max_turns))
 
 
 if __name__ == "__main__":
