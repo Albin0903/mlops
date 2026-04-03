@@ -13,6 +13,7 @@ Plateforme API-first pour l'analyse de code en streaming SSE avec providers LLM 
 3. [Observabilite](docs/observability.md)
 4. [Demonstrations](docs/demos.md)
 5. [Plan de migration API-only](docs/api_only_migration_plan.md)
+6. [Workflow de developpement](docs/dev_workflow.md)
 
 ## Demarrage rapide (local)
 

@@ -141,8 +141,8 @@ Reference contrat: [docs/api_only_migration_plan.md](docs/api_only_migration_pla
 
 ### CI locale (Dagger)
 - [x] Script `scripts/dagger_ci.py` (lint + test + build)
-- [ ] Validation complete et documentation
-- [ ] Integration dans le workflow de dev quotidien
+- [x] Validation complete et documentation
+- [x] Integration dans le workflow de dev quotidien
 
 ### Automatisation des processus
 - [x] Makefile/Justfile : `make dev`, `make deploy`, `make benchmark`, `make monitoring`
@@ -219,4 +219,3 @@ Reference contrat: [docs/api_only_migration_plan.md](docs/api_only_migration_pla
 - [ ] Qualite : type hints + docstrings sur chaque fonction
 - [ ] Git : commits atomiques (`feat:`, `fix:`, `docs:`, `ci:`)
 - [ ] Linting : Ruff avant chaque commit (pre-commit)
-
