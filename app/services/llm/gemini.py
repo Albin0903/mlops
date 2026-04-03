@@ -1,7 +1,9 @@
-from typing import Any, AsyncGenerator
+import json
+from typing import Any, AsyncGenerator, cast
 
 from app.core.config import settings
 from app.services.llm.base import BaseLLMProvider
+from app.services.llm.policies import GEMINI_THINKING_LEVEL
 
 
 class GeminiProvider(BaseLLMProvider):
@@ -11,14 +13,23 @@ class GeminiProvider(BaseLLMProvider):
         self.client = genai.Client(api_key=settings.gemini_api_key)
 
     async def stream_response(
-        self, prompt: str, system_message: str, model: str, thinking: str | bool | None = None
+        self,
+        prompt: str,
+        system_message: str,
+        model: str,
+        thinking: str | bool | None = None,
+        json_format: bool = False,
     ) -> AsyncGenerator[tuple[str, int, int], None]:
         from google.genai import types
 
         full_prompt = f"{system_message}\n\n{prompt}"
-        config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level="LOW"),
-        )
+        config_kwargs: dict[str, Any] = {
+            "thinking_config": types.ThinkingConfig(thinking_level=cast(Any, GEMINI_THINKING_LEVEL)),
+        }
+        if json_format:
+            config_kwargs["response_mime_type"] = "application/json"
+
+        config = types.GenerateContentConfig(**config_kwargs)
         response = await self.client.aio.models.generate_content_stream(
             model=model,
             contents=full_prompt,
@@ -37,15 +48,15 @@ class GeminiProvider(BaseLLMProvider):
 
     async def execute_agent_call(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         model: str,
-        tools: list[dict[str, Any]] = None,
+        tools: list[dict[str, Any]] | None = None,
         thinking: str | bool | None = None,
     ) -> dict[str, Any]:
         from google.genai import types
 
-        formatted_contents = []
-        system_instruction = None
+        formatted_contents: list[Any] = []
+        system_instruction: str | None = None
 
         for msg in messages:
             role = msg.get("role")
@@ -54,38 +65,44 @@ class GeminiProvider(BaseLLMProvider):
                 system_instruction = (system_instruction + f"\n{content}") if system_instruction else content
             elif role == "user":
                 formatted_contents.append(types.Content(role="user", parts=[types.Part.from_text(text=content)]))
-            elif role == "assistant" and content:
-                formatted_contents.append(types.Content(role="model", parts=[types.Part.from_text(text=content)]))
             elif role == "assistant" and "tool_calls" in msg:
                 # Handle agent thought/tool request
                 parts = []
                 if content:
                     parts.append(types.Part.from_text(text=content))
-                for call in msg.get("tool_calls", []):
-                    args_dict = json.loads(call["function"]["arguments"]) if isinstance(call["function"].get("arguments"), str) else call["function"].get("arguments", {})
-                    parts.append(types.Part.from_function_call(name=call["function"]["name"], args=args_dict))
+                tool_calls = cast(list[dict[str, Any]], msg.get("tool_calls", []))
+                for call in tool_calls:
+                    function_data = cast(dict[str, Any], call.get("function", {}))
+                    raw_args = function_data.get("arguments", {})
+                    args_dict = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                    function_name = str(function_data.get("name", "unknown"))
+                    parts.append(types.Part.from_function_call(name=function_name, args=args_dict))
                 if parts:
                     formatted_contents.append(types.Content(role="model", parts=parts))
+            elif role == "assistant" and content:
+                formatted_contents.append(types.Content(role="model", parts=[types.Part.from_text(text=content)]))
             elif role == "tool":
                 # Handle tool response
-                import json
+
                 try:
                     response_dict = json.loads(content) if isinstance(content, str) else content
                 except Exception:
                     response_dict = {"result": content}
-                
+
                 # Gemini expects a dict for response, wrap it if it's a list
                 if isinstance(response_dict, list):
                     response_dict = {"results": response_dict}
-                    
+
                 formatted_contents.append(
                     types.Content(
-                        role="user", 
-                        parts=[types.Part.from_function_response(name=msg.get("name", "unknown"), response=response_dict)]
+                        role="user",
+                        parts=[
+                            types.Part.from_function_response(name=msg.get("name", "unknown"), response=response_dict)
+                        ],
                     )
                 )
 
-        config_kwargs = {}
+        config_kwargs: dict[str, Any] = {}
         if system_instruction:
             config_kwargs["system_instruction"] = system_instruction
         if tools:
@@ -103,9 +120,12 @@ class GeminiProvider(BaseLLMProvider):
             model=model, contents=formatted_contents, config=config
         )
 
-        if response.candidates and response.candidates[0].content.parts:
+        candidates = cast(list[Any], getattr(response, "candidates", []) or [])
+        if candidates:
+            first_content = getattr(candidates[0], "content", None)
+            parts = cast(list[Any], getattr(first_content, "parts", []) or [])
             calls = []
-            for part in response.candidates[0].content.parts:
+            for part in parts:
                 if hasattr(part, "function_call") and part.function_call:
                     calls.append({"name": part.function_call.name, "args": part.function_call.args})
             if calls:
