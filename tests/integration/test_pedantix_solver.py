@@ -24,8 +24,7 @@ async def test_pedantix():
     # Vérification des credentials
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
-        logger.error("GEMINI_API_KEY non trouvée dans le fichier .env")
-        sys.exit(1)
+        pytest.skip("GEMINI_API_KEY absent : test d'integration Pedantix ignore")
 
     logger.info("Démarrage du test du solveur Pedantix...")
     start_time = time.time()
@@ -62,7 +61,7 @@ async def test_pedantix():
 
         except Exception as e:
             logger.error(f"Échec du test Pedantix : {e}")
-            sys.exit(1)
+            pytest.fail(f"Échec du test Pedantix : {e}")
 
 
 if __name__ == "__main__":
