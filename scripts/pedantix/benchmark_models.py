@@ -325,7 +325,7 @@ async def run_benchmark(rounds: int = 1) -> list[ModelResult]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark des modeles LLM pour Pedantix")
     parser.add_argument("--rounds", type=int, default=1, help="Nombre de rounds (moyenne)")
-    parser.add_argument("--output", type=str, default="benchmark_models_results.json")
+    parser.add_argument("--output", type=str, default="tmp/benchmark_models_results.json")
     return parser.parse_args()
 
 
@@ -338,6 +338,7 @@ def main() -> None:
     print_results_table(results)
 
     output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     serializable = []
     for r in results:
         d = asdict(r)

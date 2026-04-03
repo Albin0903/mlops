@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Benchmark Pedantix agent across providers")
     parser.add_argument("--max-iterations", type=int, default=12)
     parser.add_argument("--cooldown-seconds", type=int, default=70)
-    parser.add_argument("--output", type=str, default="debug_output_benchmark_agent.json")
+    parser.add_argument("--output", type=str, default="tmp/debug_output_benchmark_agent.json")
     parser.add_argument("--python", type=str, default=sys.executable)
     parser.add_argument("--case-timeout", type=int, default=240)
     return parser.parse_args()
@@ -228,6 +228,7 @@ def main() -> None:
         return
 
     output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps([asdict(r) for r in results], ensure_ascii=False, indent=2), encoding="utf-8")
     print_summary(results)
     print(f"\nbenchmark written to: {output_path}")

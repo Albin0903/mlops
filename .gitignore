@@ -10,9 +10,23 @@ __pycache__/
 *.tfvars
 .secret.baseline
 
+# Python and tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+
 # Agent Skills
 .agents/
 .claude/
 skills-lock.json
+
+# Local temporary artifacts
+tmp/*
+!tmp/.gitkeep
+benchmark_models_results.json
+debug_output_benchmark_agent.json
+tmp_test_gemma.py
 
 *.db
