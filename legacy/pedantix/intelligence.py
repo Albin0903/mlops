@@ -4,7 +4,7 @@ from collections import Counter
 from typing import Any
 
 from app.infrastructure.composition import get_generate_full_response_use_case
-from scripts.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text
+from legacy.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text
 
 generate_full_response_use_case = get_generate_full_response_use_case()
 

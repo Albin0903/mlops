@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Fail if app/ imports legacy or test modules."""
+"""Fail if app/ imports legacy, scripts, or test modules."""
 
 import ast
 from pathlib import Path
 
 
-DISALLOWED_IMPORT_ROOTS = {"scripts", "tests"}
+DISALLOWED_IMPORT_ROOTS = {"scripts", "legacy", "tests"}
 
 
 def _iter_app_python_files(app_root: Path) -> list[Path]:

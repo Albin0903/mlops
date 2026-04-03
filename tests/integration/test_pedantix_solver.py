@@ -31,7 +31,7 @@ async def test_pedantix():
 
     async with dagger.connection(dagger.Config(log_output=sys.stderr)):
         # Sélection des fichiers nécessaires uniquement
-        src = dag.host().directory(".", include=["scripts/pedantix/", "requirements.txt", "app/"])
+        src = dag.host().directory(".", include=["legacy/pedantix/", "requirements.txt", "app/"])
 
         # Construction du conteneur de test (plus léger)
         container = (
@@ -51,7 +51,7 @@ async def test_pedantix():
 
         try:
             # Exécution du script avec un nombre limité de candidats pour le test
-            result = await container.with_exec(["python", "scripts/pedantix/cli.py", "--max-candidates", "5"]).stdout()
+            result = await container.with_exec(["python", "legacy/pedantix/cli.py", "--max-candidates", "5"]).stdout()
 
             # Afficher les logs de sortie
             print(result)

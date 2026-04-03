@@ -3,15 +3,15 @@ import re
 from typing import Any
 
 from app.infrastructure.composition import get_execute_agent_call_use_case
-from scripts.pedantix.client_wikipedia import search_wikipedia_titles
-from scripts.pedantix.intelligence import (
+from legacy.pedantix.client_wikipedia import search_wikipedia_titles
+from legacy.pedantix.intelligence import (
     ask_llm_candidates,
     ask_llm_probes,
     build_fallback_probes,
     extract_best_score,
     summarize_results,
 )
-from scripts.pedantix.models import extract_words_from_phrase, normalize_text
+from legacy.pedantix.models import extract_words_from_phrase, normalize_text
 
 execute_agent_call_use_case = get_execute_agent_call_use_case()
 
@@ -345,7 +345,7 @@ class PedantixAgent:
         if not candidates:
             return None
 
-        from scripts.pedantix.client_wikipedia import resolve_wikipedia_title
+        from legacy.pedantix.client_wikipedia import resolve_wikipedia_title
 
         for candidate in candidates:
             resolved = await resolve_wikipedia_title(self.context.client, candidate)
@@ -540,7 +540,7 @@ class PedantixAgent:
 
         elif name == "analyze_wikipedia_page":
             title = args.get("title", "")
-            from scripts.pedantix.client_wikipedia import resolve_wikipedia_title
+            from legacy.pedantix.client_wikipedia import resolve_wikipedia_title
             resolved = await resolve_wikipedia_title(self.context.client, title)
             if not resolved:
                 return "Page introuvable."

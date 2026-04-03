@@ -21,7 +21,7 @@ help:
 	@echo "  make lint         - Verifie le style (ruff)"
 	@echo "  make format       - Formate le code (ruff-format)"
 	@echo "  make quality      - Lance pre-commit sur tout le depot"
-	@echo "  make check-api-core-boundaries - Verifie qu'aucun import app/ -> scripts/tests n'existe"
+	@echo "  make check-api-core-boundaries - Verifie qu'aucun import app/ -> scripts/legacy/tests n'existe"
 	@echo "  make prepush      - Lance les checks du stage pre-push"
 	@echo "  make ci-local     - Reproduit localement le gate complet (prepush + tests)"
 	@echo "  make build-local  - Build image Docker et charge dans Minikube"
@@ -108,11 +108,11 @@ benchmark:
 
 legacy-pedantix:
 	@echo "info: execution legacy explicite (hors coeur API-only)"
-	$(PYTHON) scripts/pedantix/cli.py --help
+	$(PYTHON) -m legacy.pedantix.cli --help
 
 legacy-tusmo:
 	@echo "info: execution legacy explicite (hors coeur API-only)"
-	$(PYTHON) scripts/tusmo/cli.py --help
+	$(PYTHON) -m legacy.tusmo.cli --help
 
 clean:
 	find . -type d -name '__pycache__' -prune -exec rm -rf {} +

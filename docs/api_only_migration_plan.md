@@ -26,7 +26,7 @@ Inclus dans le coeur produit:
 - Tests API-first, outillage qualite, containerisation.
 
 Exclus du coeur produit (legacy/lab ou repo dedie):
-- Solveurs jeux (`scripts/pedantix`, `scripts/tusmo`).
+- Solveurs jeux (`legacy/pedantix`, `legacy/tusmo`).
 - Bot Selenium et automatisations non API-first.
 - Benchmarks agents hors flux produit API.
 - Artefacts de test ad hoc hors pipeline standard.
@@ -66,8 +66,8 @@ Regles de dependance:
 | `app/application/use_cases/resolve_provider.py` | Use case de resolution provider (branche dans `AnalyzeStreamUseCase`) | Application | Migre |
 | `app/application/use_cases/execute_agent_call.py` | Use case appels agent non-streaming (provider resolu) | Application | Migre |
 | `app/domain/usage.py` | Contrat tokens in/out (`TokenUsage`) | Domain | Migre |
-| `scripts/pedantix/**` | `legacy/` ou repo dedie | Hors coeur | A decommissionner |
-| `scripts/tusmo/**` | `legacy/` ou repo dedie | Hors coeur | A decommissionner |
+| `legacy/pedantix/**` | `legacy/` ou repo dedie | Hors coeur | Extrait |
+| `legacy/tusmo/**` | `legacy/` ou repo dedie | Hors coeur | Extrait |
 | `scripts/test_streaming.py` | Test integration officiel | Hors coeur (si ad hoc) | A trier |
 
 ## Livrables clos par ce document
@@ -93,10 +93,10 @@ Regles de dependance:
 - [x] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
 - [x] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
 - [ ] Phase 5 (en cours) - Pyramide de tests structuree (cibles unit/contract/integration/e2e + scenario E2E minimal).
-- [x] Phase 5 - Garde de frontiere active: `app/` ne depend pas de `scripts/` ni `tests/` (test + check CI hors pytest).
+- [x] Phase 5 - Garde de frontiere active: `app/` ne depend pas de `legacy/`, `scripts/` ni `tests/` (test + check CI hors pytest).
 - [x] Phase 5 - Refonte de la pyramide de tests (unitaires, contrats adapters, integration streaming, E2E minimal).
 - [ ] Phase 5 - Documentation et consignes agents harmonisees avec l'etat reel du code (en cours).
-- [ ] Phase 5 - Decommission legacy hors coeur API-first (en cours: execution explicite via cibles Makefile dediees).
+- [x] Phase 5 - Decommission legacy hors coeur API-first (extraction `scripts/*` -> `legacy/*` + execution explicite via cibles Makefile).
 - [ ] Phase 6 - Cutover final (entree principale, nettoyage ancien chemin, stabilisation release).
 
 ## Suite immediate (ordre de travail)

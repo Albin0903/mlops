@@ -17,7 +17,7 @@ Ce fichier regroupe les idees d'ameliorations et les taches non-bloquantes. Pour
 - [x] Phase 3 - Observabilite decouplee via `ObservabilityGateway` (traces + metriques)
 - [x] Phase 3 - Injection `LLMProviderRegistry` via composition (plus de factory globale sur le flux API)
 - [x] Phase 3 - Composition API: suppression complete des singletons globaux metier
-- [ ] Phase 5 - Decommission legacy hors API-first (`scripts/pedantix`, `scripts/tusmo`, bots/bench ad hoc)
+- [x] Phase 5 - Decommission legacy hors API-first (`legacy/pedantix`, `legacy/tusmo`, bots/bench ad hoc)
 
 Reference: [docs/api_only_migration_plan.md](docs/api_only_migration_plan.md)
 

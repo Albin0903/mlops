@@ -2,7 +2,7 @@ import json
 from typing import Any
 
 from app.infrastructure.composition import get_execute_agent_call_use_case
-from scripts.tusmo.entropy import TusmoSolver
+from legacy.tusmo.entropy import TusmoSolver
 
 execute_agent_call_use_case = get_execute_agent_call_use_case()
 

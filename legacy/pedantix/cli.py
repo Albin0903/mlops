@@ -20,22 +20,22 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from app.services.provider_registry import get_supported_providers  # noqa: E402
-from scripts.pedantix.cache import get_cached_results, init_db, save_results_to_cache  # noqa: E402
-from scripts.pedantix.client_pedantix import (  # noqa: E402
+from legacy.pedantix.cache import get_cached_results, init_db, save_results_to_cache  # noqa: E402
+from legacy.pedantix.client_pedantix import (  # noqa: E402
     BASE_URL,
     extract_homepage_metadata,
     parse_guess_result,
     score_word_raw,
 )
-from scripts.pedantix.client_wikipedia import search_wikipedia_titles  # noqa: E402
-from scripts.pedantix.intelligence import (  # noqa: E402
+from legacy.pedantix.client_wikipedia import search_wikipedia_titles  # noqa: E402
+from legacy.pedantix.intelligence import (  # noqa: E402
     ask_llm_candidates,
     ask_llm_probes,
     build_fallback_probes,
     render_virtual_window,
     summarize_results,
 )
-from scripts.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text  # noqa: E402
+from legacy.pedantix.models import GuessResult, extract_words_from_phrase, normalize_text  # noqa: E402
 
 DEFAULT_INITIAL_PROBES = [
     "le",
@@ -376,7 +376,7 @@ async def solve_pedantix(
 
         if mode == "agent":
             print(f"Sub-provider  : {sub_provider}")
-            from scripts.pedantix.agent import PedantixAgent
+            from legacy.pedantix.agent import PedantixAgent
 
             agent = PedantixAgent(
                 puzzle_number,
@@ -432,7 +432,7 @@ async def solve_pedantix(
             if stagnation_count >= 2:
                 print(f"  info: stagnation detectee (delta={score_delta:.1f}), injection derivations morphologiques")
                 # Inject morphological variants from top proximity words
-                from scripts.pedantix.intelligence import _derive_morphological_variants
+                from legacy.pedantix.intelligence import _derive_morphological_variants
 
                 morph_words = []
                 for p in summary.get("best_probes", [])[:10]:

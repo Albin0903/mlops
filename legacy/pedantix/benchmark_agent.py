@@ -64,7 +64,7 @@ def run_once(
     cmd = [
         python_cmd,
         "-m",
-        "scripts.pedantix.cli",
+        "legacy.pedantix.cli",
         "--mode",
         "agent",
         "--provider",
@@ -166,7 +166,7 @@ def benchmark(args: argparse.Namespace) -> list[BenchResult]:
                 break
 
         cmd_preview = (
-            f"{args.python} -m scripts.pedantix.cli --mode agent --provider {active_provider} "
+            f"{args.python} -m legacy.pedantix.cli --mode agent --provider {active_provider} "
             f"--sub-provider {active_sub_provider} --max-iterations {args.max_iterations}"
         )
         results.append(

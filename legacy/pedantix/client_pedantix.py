@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from scripts.pedantix.models import GuessResult, normalize_text
+from legacy.pedantix.models import GuessResult, normalize_text
 
 BASE_URL = "https://pedantix.certitudes.org"
 BROWSER_HEADERS = {

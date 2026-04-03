@@ -3,8 +3,8 @@
 ## Portee produit
 
 - Le coeur produit est API-first sous `app/`.
-- Les modules `scripts/pedantix` et `scripts/tusmo` sont hors coeur API et doivent rester optionnels.
-- Ne pas introduire de dependance runtime du coeur API vers `scripts/`.
+- Les modules `legacy/pedantix` et `legacy/tusmo` sont hors coeur API et doivent rester optionnels.
+- Ne pas introduire de dependance runtime du coeur API vers `legacy/` ou `scripts/`.
 
 ## Regles d'architecture
 

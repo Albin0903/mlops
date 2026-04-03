@@ -2,7 +2,7 @@
 
 import pytest
 
-from scripts.pedantix.client_wikipedia import resolve_wikipedia_title
+from legacy.pedantix.client_wikipedia import resolve_wikipedia_title
 
 
 class FakeResponse:

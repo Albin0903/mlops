@@ -1,5 +1,5 @@
 """
-scripts/pedantix/benchmark_models.py -- benchmark comparatif des modeles LLM.
+legacy/pedantix/benchmark_models.py -- benchmark comparatif des modeles LLM.
 
 Teste chaque provider sur un prompt Pedantix identique et mesure :
 - latence (secondes)
@@ -9,8 +9,8 @@ Teste chaque provider sur un prompt Pedantix identique et mesure :
 - qualite du francais (heuristique simple)
 
 Usage :
-    python -m scripts.pedantix.benchmark_models
-    python -m scripts.pedantix.benchmark_models --rounds 3
+    python -m legacy.pedantix.benchmark_models
+    python -m legacy.pedantix.benchmark_models --rounds 3
 """
 
 import argparse
@@ -22,7 +22,7 @@ from pathlib import Path
 
 from app.infrastructure.composition import get_llm_service
 from app.services.provider_registry import PROVIDER_MODELS
-from scripts.pedantix.intelligence import extract_json
+from legacy.pedantix.intelligence import extract_json
 
 llm_service = get_llm_service()
 

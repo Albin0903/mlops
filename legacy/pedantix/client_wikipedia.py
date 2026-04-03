@@ -2,7 +2,7 @@ import asyncio
 
 import httpx
 
-from scripts.pedantix.models import normalize_wikipedia_title_for_match
+from legacy.pedantix.models import normalize_wikipedia_title_for_match
 
 WIKIPEDIA_API = "https://fr.wikipedia.org/w/api.php"
 WIKIPEDIA_HEADERS = {

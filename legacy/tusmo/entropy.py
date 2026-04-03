@@ -1,6 +1,6 @@
 from collections import Counter
 
-from scripts.tusmo.dictionary import TusmoDictionary
+from legacy.tusmo.dictionary import TusmoDictionary
 
 
 class TusmoSolver:

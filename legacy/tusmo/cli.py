@@ -1,9 +1,7 @@
 import argparse
 
-from scripts.tusmo.agent import TusmoAgent
-from scripts.tusmo.bot import TusmoBot
-from scripts.tusmo.dictionary import TusmoDictionary
-from scripts.tusmo.entropy import TusmoSolver
+from legacy.tusmo.dictionary import TusmoDictionary
+from legacy.tusmo.entropy import TusmoSolver
 
 
 class ANSI:
@@ -75,6 +73,8 @@ def interactive_solve(longueur: int, lettre_depart: str) -> None:
 
 
 def bot_solve(room_url: str) -> None:
+    from legacy.tusmo.bot import TusmoBot
+
     bot = TusmoBot()
     try:
         lettre_depart, longueur = bot.connect(room_url)
@@ -108,6 +108,8 @@ def bot_solve(room_url: str) -> None:
 
 
 async def agent_solve(longueur: int, lettre_depart: str, provider: str, thinking: str, max_turns: int = 8) -> None:
+    from legacy.tusmo.agent import TusmoAgent
+
     db = TusmoDictionary()
     solver = TusmoSolver(longueur, lettre_depart, db)
     agent = TusmoAgent(solver, provider=provider, thinking=thinking)
