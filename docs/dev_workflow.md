@@ -44,6 +44,7 @@ Notes:
 
 - `pre-commit` couvre lint, format, secrets, manifests K8s et checks Terraform.
 - `scripts/dagger_ci.py` reproduit un pipeline local proche de la CI distante.
+- Les sorties debug/benchmark locales doivent aller dans `tmp/` pour eviter le bruit dans les changements Git.
 
 ## 4) Integration vers develop
 

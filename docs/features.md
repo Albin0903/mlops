@@ -15,13 +15,14 @@ Le schema `AnalysisRequest` valide:
 - `language` (defaut: `python`)
 - `mode` (`doc` ou `question`)
 - `question` (optionnel, utile en mode `question`)
-- `provider` (valeurs supportees par le registry)
+- `provider` (defaut: `gemma4b`, valeurs supportees par le registry)
 
 ## Providers supportes
 
 - Groq: `groq`, `instant`, `medium`, `gpt`
 - Gemini: `gemini`
-- Ollama local: `ollama`, `ollama-medium`, `ollama-small`, `ollama-mini`, `ollama-llama3`
+- Ollama local (defaut): `ollama`, `gemma4b`, `gemma4-e4b`, `gemma4-e2b`, `gemma4-26b`, `ollama-medium`, `ollama-small`, `ollama-mini`, `ollama-llama3`
+- Aliases de confort: `qwen9b`, `qwen2b`, `qwen0.8b`, `local`, `default`
 
 ## Modes d'analyse
 

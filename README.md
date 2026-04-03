@@ -37,6 +37,7 @@ curl -N -X POST http://localhost:8000/analyze/ \
 
 ```bash
 make ci-local
+make prepush
 ```
 
 Gate principal:
@@ -48,7 +49,8 @@ Gate principal:
 
 - Groq: `groq`, `instant`, `medium`, `gpt`
 - Gemini: `gemini`
-- Ollama local: `ollama`, `ollama-medium`, `ollama-small`, `ollama-mini`, `ollama-llama3`
+- Ollama local (defaut: `gemma4b`): `ollama`, `gemma4b`, `gemma4-e4b`, `gemma4-e2b`, `gemma4-26b`, `ollama-medium`, `ollama-small`, `ollama-mini`, `ollama-llama3`
+- Aliases pratiques: `qwen9b`, `qwen2b`, `qwen0.8b`, `local`, `default`
 
 ## Architecture API-only
 

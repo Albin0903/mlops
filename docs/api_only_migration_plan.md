@@ -77,10 +77,30 @@ Regles de dependance:
 - Architecture cible avec regles strictes de dependance.
 - Cartographie old-to-new explicite pour migration parallele.
 
+## Suivi d'execution des phases (maj 2026-04-03)
+
+- [x] Phase 0 - Baseline produit (analyze, health, providers, observabilite, CI, container).
+- [x] Phase 0 - Scope contractuel (coeur API-first vs legacy hors coeur).
+- [x] Phase 1 - Architecture cible en couches avec regles strictes.
+- [x] Phase 1 - Cartographie old-to-new pour migration parallele.
+- [x] Phase 2 - Classes metier et contrats stabilises (provider, prompt, usage, health, ports).
+- [x] Phase 2 - Use cases applicatifs centralises (stream analyze, prompt building, provider resolution, health).
+- [x] Phase 3 - Adapters providers harmonises sur socle commun.
+- [x] Phase 3 - Composition API avec injection explicite, sans singleton metier global.
+- [x] Phase 3 - Observabilite decouplee via composants dedies.
+- [x] Phase 4 (partiel) - Defaut provider local passe a `gemma4b` + aliases enrichis pour appel des modeles.
+- [x] Phase 4 (partiel) - Hygiene outillage/debug via dossier `tmp/` et ignore git des artefacts locaux.
+- [ ] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
+- [ ] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
+- [ ] Phase 5 - Refonte de la pyramide de tests (unitaires, contrats adapters, integration streaming, E2E minimal).
+- [ ] Phase 5 - Documentation et consignes agents harmonisees avec l'etat reel du code.
+- [ ] Phase 5 - Decommission legacy hors coeur API-first (solveurs/bots/bench ad hoc).
+- [ ] Phase 6 - Cutover final (entree principale, nettoyage ancien chemin, stabilisation release).
+
 ## Suite immediate (ordre de travail)
 
-1. Phase 2: classes metier/contracts et ports observabilite finalises.
-2. Phase 2: centralisation des use cases applicatifs finalisee (`ExecuteAgentCallUseCase`, `GenerateFullResponseUseCase`).
-3. Phase 3: deglobalisation des composants metier finalisee (plus de singleton global provider factory dans le chemin metier API).
-4. Phase 3: adapters providers harmonises sur socle commun (retry/payload/tokens/erreurs).
-5. Phase 5: decommissionner effectivement les modules legacy hors API-first.
+1. Finaliser la rationalisation outillage/dependances (Phase 4).
+2. Aligner completement les gates pre-commit + GitHub Actions (Phase 4 qualite automatisee).
+3. Executer la refonte tests par couche/contrat/integration/E2E minimal (Phase 5).
+4. Harmoniser la doc et les directives agents sur le flux API-only courant (Phase 5).
+5. Decommissionner les modules legacy non API-first (Phase 5) avant cutover release (Phase 6).

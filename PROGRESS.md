@@ -24,8 +24,13 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Phase 3 - Finaliser observabilite decouplee du flux principal
 - [x] Phase 3 - Injection provider registry via composition (flux API sans factory globale)
 - [x] Phase 3 - Adapters providers harmonises sur socle commun (`app/services/llm/common.py`)
+- [x] Phase 4 - Providers locaux harmonises (defaut `gemma4b` + aliases et resolution normalisee)
+- [x] Phase 4 - Hygiene artefacts debug (`tmp/` + sorties benchmark deplacees + `.gitignore`)
 - [ ] Phase 4 - Rationalisation outillage/dependances
-- [ ] Phase 5 - Refonte tests + decommission legacy
+- [ ] Phase 4 - Qualite automatisee (gates locaux/CI pleinement unifies)
+- [ ] Phase 5 - Refonte tests (pyramide complete par couche/contrat/integration/E2E)
+- [ ] Phase 5 - Documentation et instructions IA harmonisees sur la nouvelle architecture
+- [ ] Phase 5 - Decommission legacy hors coeur API-first
 - [ ] Phase 6 - Cutover final et stabilisation release
 
 Reference contrat: [docs/api_only_migration_plan.md](docs/api_only_migration_plan.md)
