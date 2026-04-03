@@ -4,6 +4,34 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 
 ---
 
+## Etat actuel (snapshot)
+- [x] Architecture API-only en couches (`domain` / `application` / `infrastructure` / `api`)
+- [x] Composition centralisee des use cases dans `app/infrastructure/composition.py`
+- [x] Providers actifs: Groq, Gemini, Ollama (avec alias provider)
+- [x] Gate qualite alignee local + CI (`make ci-local` et workflow GitHub)
+- [x] Couverture enforcee: 90% minimum, couverture mesuree ~98%
+
+## Plan refonte API-only (transversal)
+- [x] Phase 0 - Baseline produit figee (analyze, health, providers, observabilite, CI, container)
+- [x] Phase 0 - Scope contractuel fige (coeur API-first vs legacy hors coeur)
+- [x] Phase 1 - Architecture cible validee (modular monolith en couches)
+- [x] Phase 1 - Cartographie old-to-new formalisee pour migration parallele
+- [x] Phase 2 - Classes metier et ports/contracts principaux (provider, prompt, token usage, observabilite)
+- [x] Phase 2 - Resolution provider/model centralisee dans le flux applicatif `analyze`
+- [x] Phase 2 - Appels agent non-streaming centralises via `ExecuteAgentCallUseCase`
+- [x] Phase 2 - Centralisation complete des use cases applicatifs (`GenerateFullResponseUseCase` inclus)
+- [x] Phase 3 - Composition API finalisee sans singletons metier globaux
+- [x] Phase 3 - Finaliser observabilite decouplee du flux principal
+- [x] Phase 3 - Injection provider registry via composition (flux API sans factory globale)
+- [x] Phase 3 - Adapters providers harmonises sur socle commun (`app/services/llm/common.py`)
+- [ ] Phase 4 - Rationalisation outillage/dependances
+- [ ] Phase 5 - Refonte tests + decommission legacy
+- [ ] Phase 6 - Cutover final et stabilisation release
+
+Reference contrat: [docs/api_only_migration_plan.md](docs/api_only_migration_plan.md)
+
+---
+
 ## Sprint 1 : Infrastructure Cloud & IaC
 *Competences visees : Terraform, Kubernetes, Cloud Architecture*
 
@@ -30,8 +58,8 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 ### FastAPI & LLM
 - [x] API FastAPI 100% async avec streaming SSE
 - [x] Groq : multi-modele (Llama 8b instant, 70b versatile, GPT-OSS 120b)
-- [x] Gemini : gemini-3.1-flash-lite avec Thinking Mode
-- [x] Routing dynamique par provider (`instant`, `medium`, `gpt`, `gemini`)
+- [x] Gemini : `gemini-3.1-flash-lite-preview` avec Thinking Mode
+- [x] Routing dynamique par provider (`groq`, `instant`, `medium`, `gpt`, `gemini`, `ollama*`)
 - [x] Retry avec backoff exponentiel (Tenacity)
 - [x] Prompts systeme optimises (reduction tokens ~30%)
 - [x] Validation stricte avec Pydantic
@@ -52,7 +80,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Tests service LLM avec mocking
 - [x] Tests schemas Pydantic
 - [x] Tests health check et config
-- [x] Couverture : 99%
+- [x] Couverture gate CI/local : 90% (mesuree ~98%)
 
 ---
 
@@ -93,9 +121,10 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Metriques custom LLM : `llm_requests_total`, `llm_tokens_total`, `llm_latency_seconds`, `llm_errors_total`
 - [x] Dashboard Grafana as Code (ConfigMap versionne)
 - [x] Dashboard : total HTTP requests, status codes, latence moyenne, request rate
-- [ ] Dashboard : quotas LLM (RPM/TPD restants par modele)
-- [ ] Alerting Prometheus (latence P95 > 5s, taux erreur > 5%)
-- [ ] Logs centralises (Loki/Promtail)
+- [x] Dashboard : quotas LLM (RPM/TPD restants par modele)
+- [x] Dashboard LLM avance : tokens in/out, cout cumule, latence par modele
+- [x] Alerting Prometheus (latence P95 > 5s, taux erreur > 5%)
+- [x] Logs centralises (Loki/Promtail)
 
 ### Tests de charge (Locust)
 - [x] Fichier `tests/locustfile.py` avec scenarios multi-provider
@@ -117,9 +146,9 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 
 ### Automatisation des processus
 - [x] Makefile/Justfile : `make dev`, `make deploy`, `make benchmark`, `make monitoring`
-- [ ] Script de demo rapide (`scripts/demo.sh`)
-- [ ] Script one-command : build + load + deploy + port-forward
-- [ ] Pre-commit : ajouter validation des manifests K8s (kubeval/kubeconform)
+- [x] Script de demo rapide (`scripts/demo.sh`)
+- [x] Script one-command : build + load + deploy + port-forward
+- [x] Pre-commit : ajouter validation des manifests K8s (kubeval/kubeconform)
 
 ---
 

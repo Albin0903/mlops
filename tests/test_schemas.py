@@ -80,6 +80,16 @@ class TestAnalysisRequestValidation:
         req = AnalysisRequest(content="code", provider="gemini")
         assert req.provider == "gemini"
 
+    def test_provider_ollama_small_accepted(self):
+        """le provider 'ollama-small' est valide"""
+        req = AnalysisRequest(content="code", provider="ollama-small")
+        assert req.provider == "ollama-small"
+
+    def test_provider_gemma_alias_accepted(self):
+        """les aliases gemma exposes par le registry sont valides"""
+        req = AnalysisRequest(content="code", provider="gemma4-e4b")
+        assert req.provider == "gemma4-e4b"
+
 
 class TestAnalysisRequestQuestionMode:
     """tests specifiques au mode question"""

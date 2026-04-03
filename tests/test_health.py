@@ -46,7 +46,7 @@ async def test_health_version_format(client):
 @pytest.mark.asyncio
 async def test_health_llm_ready_without_key(client):
     """llm_ready doit etre false si aucune cle api n'est configuree"""
-    with patch("app.api.routes.health.settings.groq_api_key", None):
+    with patch("app.infrastructure.adapters.runtime_status_gateway.settings.groq_api_key", None):
         response = await client.get("/health/")
         data = response.json()
         assert data["llm_ready"] is False
@@ -55,7 +55,7 @@ async def test_health_llm_ready_without_key(client):
 @pytest.mark.asyncio
 async def test_health_llm_ready_with_key(client):
     """llm_ready doit etre true si la cle api est configuree"""
-    with patch("app.api.routes.health.settings.groq_api_key", "fake-key"):
+    with patch("app.infrastructure.adapters.runtime_status_gateway.settings.groq_api_key", "fake-key"):
         response = await client.get("/health/")
         data = response.json()
         assert data["llm_ready"] is True
