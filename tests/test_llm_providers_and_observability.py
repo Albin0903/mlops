@@ -93,7 +93,7 @@ def test_groq_init_uses_api_key(monkeypatch):
 
     provider = GroqProvider()
 
-    assert provider.client.api_key == "groq-key"
+    assert provider.client.api_key == "groq-key"  # pragma: allowlist secret
 
 
 @pytest.mark.asyncio
@@ -229,7 +229,7 @@ def test_gemini_init_uses_api_key(monkeypatch):
 
     provider = GeminiProvider()
 
-    assert cast(Any, provider).client.api_key == "gemini-key"
+    assert cast(Any, provider).client.api_key == "gemini-key"  # pragma: allowlist secret
 
 
 @pytest.mark.asyncio
