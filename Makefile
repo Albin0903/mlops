@@ -2,19 +2,20 @@
 # Makefile - workflow local standardise (API-only)
 # -----------------------------------------------------------------------------
 
-.PHONY: help install dev test test-fast lint format quality ci-local build-local deploy monitoring benchmark demo up-local clean
+.PHONY: help install dev test test-fast lint format quality prepush ci-local build-local deploy monitoring benchmark demo up-local clean
 
 PYTHON ?= python
 
 help:
 	@echo "Commandes disponibles :"
-	@echo "  make install      - Installe les dependances et les hooks pre-commit"
+	@echo "  make install      - Installe dependances + hooks pre-commit et pre-push"
 	@echo "  make dev          - Lance l'API en mode developpement"
 	@echo "  make test         - Lance tous les tests avec couverture"
 	@echo "  make test-fast    - Lance un sous-ensemble de tests rapides"
 	@echo "  make lint         - Verifie le style (ruff)"
 	@echo "  make format       - Formate le code (ruff-format)"
 	@echo "  make quality      - Lance pre-commit sur tout le depot"
+	@echo "  make prepush      - Lance les checks du stage pre-push"
 	@echo "  make ci-local     - Reproduit localement le gate qualite principal"
 	@echo "  make build-local  - Build image Docker et charge dans Minikube"
 	@echo "  make deploy       - Deploie les manifestes Kubernetes"
@@ -27,7 +28,8 @@ help:
 install:
 	$(PYTHON) -m pip install --upgrade pip
 	$(PYTHON) -m pip install -r requirements-dev.txt
-	$(PYTHON) -m pre_commit install
+	$(PYTHON) -m pre_commit install --hook-type pre-commit
+	$(PYTHON) -m pre_commit install --hook-type pre-push
 
 dev:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -48,6 +50,9 @@ format:
 
 quality:
 	$(PYTHON) -m pre_commit run --all-files
+
+prepush:
+	$(PYTHON) -m pre_commit run --hook-stage pre-push --all-files
 
 ci-local: lint test
 

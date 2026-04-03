@@ -13,6 +13,7 @@ repos:
     - id: trailing-whitespace
     - id: end-of-file-fixer
     - id: check-yaml
+      args: ["--allow-multiple-documents"]
 
 - repo: https://github.com/yelp/detect-secrets
   rev: v1.5.0
@@ -21,13 +22,15 @@ repos:
       args: ['--baseline', '.secrets.baseline']
       exclude: .*/tests
 
-- repo: https://github.com/antonbabenko/pre-commit-terraform
-  rev: v1.86.0
-  hooks:
-    - id: terraform_validate
-
 - repo: local
   hooks:
+    - id: terraform-validate
+      name: terraform validate (root + modules)
+      entry: bash scripts/terraform_validate_all.sh
+      language: system
+      pass_filenames: false
+      files: ^terraform/.*\.tf$
+
     - id: kubeconform
       name: kubeconform (k8s manifests)
       entry: >-
