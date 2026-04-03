@@ -8,8 +8,11 @@ from typing import Any
 import httpx
 
 # Fix for Windows console unicode errors
-if sys.stdout.encoding.lower() != "utf-8":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+stdout_encoding = (sys.stdout.encoding or "").lower()
+if stdout_encoding != "utf-8":
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure):
+        reconfigure(encoding="utf-8", errors="replace")
 
 # Include root dir to path
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -207,7 +210,8 @@ def print_solution(solution: GuessResult, label: str, source_detail: str | None 
     print(f"info: SOLUTION TROUVÉE ({label}) : {solution.solution}")
     if source_detail:
         print(f"Source : {source_detail}")
-    print(f"Lien : https://fr.wikipedia.org/wiki/{solution.solution.replace(' ', '_')}")
+    if solution.solution:
+        print(f"Lien : https://fr.wikipedia.org/wiki/{solution.solution.replace(' ', '_')}")
 
 
 async def score_words_batch(
@@ -305,7 +309,13 @@ class SolverContext:
 
 
 async def solve_pedantix(
-    provider: str, max_candidates: int, max_iterations: int, verbose: bool, thinking: str, mode: str = "classic"
+    provider: str,
+    sub_provider: str,
+    max_candidates: int,
+    max_iterations: int,
+    verbose: bool,
+    thinking: str,
+    mode: str = "classic",
 ) -> None:
     limits = httpx.Limits(max_connections=50, max_keepalive_connections=20)
     headers = {
@@ -327,41 +337,62 @@ async def solve_pedantix(
         print(f"Thinking       : {thinking}")
         print(f"Aperçu masque  : {masked_preview[:200]}...\n")
 
-        db_conn = init_db()
-        ctx = SolverContext(client, db_conn, puzzle_number, verbose=verbose)
-
-        if mode == "agent":
-            from scripts.pedantix.agent import PedantixAgent
-
-            agent = PedantixAgent(
-                puzzle_number, title_lengths, slot_lengths, masked_preview, ctx, provider=provider, thinking=thinking, max_turns=max_iterations
-            )
-            await agent.run()
-            return
-
-        def check_victory(summary: dict[str, Any] | None) -> bool:
+        def check_victory(summary: dict[str, Any] | None) -> tuple[bool, str]:
             if not summary:
-                return False
+                return False, ""
             exacts = summary.get("exact_terms") or []
-            covered_positions = set()
+            covered_positions = {}
             for item in exacts:
                 if not isinstance(item, dict):
                     continue
                 p_list = item.get("positions")
+                term = item.get("term", "")
                 if p_list is None:
                     continue
                 for p in p_list:
                     if p < len(title_lengths):
-                        covered_positions.add(p)
-            return len(covered_positions) == len(title_lengths)
+                        covered_positions[p] = term
+
+            is_victory = len(covered_positions) == len(title_lengths)
+            if not is_victory:
+                return False, ""
+
+            reconstructed_title = " ".join([covered_positions[i] for i in range(len(title_lengths))])
+            return True, reconstructed_title
+
+        db_conn = init_db()
+        ctx = SolverContext(client, db_conn, puzzle_number, verbose=verbose)
+
+        # Les sondes initiales sont utiles dans les deux modes (agent ou classique)
+        print("info: Sondes initiales automatiques en cours...")
+        _, init_solution = await ctx.score_batch(DEFAULT_INITIAL_PROBES, tag="init")
+        summary = summarize_results(ctx.all_results)
+        is_vic, reco_title = check_victory(summary)
+        if init_solution or is_vic:
+            sol_obj = init_solution if init_solution else GuessResult("", None, {}, {}, True, reco_title)
+            print_solution(sol_obj, "phase initiale")
+            return
+
+        if mode == "agent":
+            print(f"Sub-provider  : {sub_provider}")
+            from scripts.pedantix.agent import PedantixAgent
+
+            agent = PedantixAgent(
+                puzzle_number,
+                title_lengths,
+                slot_lengths,
+                masked_preview,
+                ctx,
+                provider=provider,
+                sub_provider=sub_provider,
+                thinking=thinking,
+                max_turns=max_iterations,
+            )
+            await agent.run()
+            return
 
         # Phase 1
         print("info: Phase 1 : Sondes initiales")
-        results, solution = await ctx.score_batch(DEFAULT_INITIAL_PROBES, tag="init")
-        summary = summarize_results(ctx.all_results)
-        if solution or check_victory(summary):
-            print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), "phase initiale")
-            return
 
         print_exact_hits(summary)
         print_probe_scores(summary)
@@ -370,26 +401,73 @@ async def solve_pedantix(
         print("info: Phase 2 : Sondes heuristiques")
         results, solution = await ctx.score_batch(build_fallback_probes(summary), tag="heur")
         summary = summarize_results(ctx.all_results)
-        if solution or check_victory(summary):
-            print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), "phase heuristique")
+        is_vic, reco_title = check_victory(summary)
+        if solution or is_vic:
+            sol_obj = solution if solution else GuessResult("", None, {}, {}, True, reco_title)
+            print_solution(sol_obj, "phase heuristique")
             return
 
         tested_titles = []
         searched_queries = set()
+        prev_best_score = 0.0
+        stagnation_count = 0
 
         # Boucle Classique
         for iteration in range(1, max_iterations + 1):
-            print(f"info: ITÉRATION {iteration}/{max_iterations}")
+            print(f"info: ITERATION {iteration}/{max_iterations}")
+
+            # Stagnation detection: if best score hasn't improved by >= 2 for 2 iterations, force pivot
+            current_best = max(
+                (p.get("best_score", 0) for p in summary.get("best_probes", [])),
+                default=0.0,
+            )
+            score_delta = current_best - prev_best_score
+            if iteration > 1 and score_delta < 2.0:
+                stagnation_count += 1
+            else:
+                stagnation_count = 0
+            prev_best_score = current_best
+
+            if stagnation_count >= 2:
+                print(f"  info: stagnation detectee (delta={score_delta:.1f}), injection derivations morphologiques")
+                # Inject morphological variants from top proximity words
+                from scripts.pedantix.intelligence import _derive_morphological_variants
+
+                morph_words = []
+                for p in summary.get("best_probes", [])[:10]:
+                    word = normalize_text(str(p.get("word", "")))
+                    if word and word not in ctx.known_words:
+                        morph_words.extend(_derive_morphological_variants(word))
+                morph_words = [w for w in morph_words if w not in ctx.known_words][:20]
+                if morph_words:
+                    print(f"  info: test de {len(morph_words)} variantes morphologiques")
+                    results, solution = await ctx.score_batch(morph_words, tag=f"morph-{iteration}")
+                    summary = summarize_results(ctx.all_results)
+                    is_vic, reco_title = check_victory(summary)
+                    if solution or is_vic:
+                        sol_obj = solution if solution else GuessResult("", None, {}, {}, True, reco_title)
+                        print_solution(sol_obj, f"morphologie {iteration}")
+                        return
+                stagnation_count = 0
+
             probe_plan = await ask_llm_probes(
-                title_lengths, masked_preview, summary, provider, ctx.known_words, thinking=thinking
+                title_lengths,
+                masked_preview,
+                summary,
+                provider,
+                ctx.known_words,
+                thinking=thinking,
+                slot_lengths=slot_lengths,
             )
             llm_probes = probe_plan.get("next_probes", [])
             llm_queries = [q for q in probe_plan.get("wikipedia_queries", []) if isinstance(q, str) and q.strip()]
 
             results, solution = await ctx.score_batch(llm_probes, tag=f"llm-{iteration}")
             summary = summarize_results(ctx.all_results)
-            if solution or check_victory(summary):
-                print_solution(solution if solution else GuessResult("", None, {}, {}, True, ""), f"sondes LLM {iteration}")
+            is_vic, reco_title = check_victory(summary)
+            if solution or is_vic:
+                sol_obj = solution if solution else GuessResult("", None, {}, {}, True, reco_title)
+                print_solution(sol_obj, f"sondes LLM {iteration}")
                 return
 
             # Wiki
@@ -414,7 +492,14 @@ async def solve_pedantix(
 
             # Candidates
             llm_candidates = await ask_llm_candidates(
-                title_lengths, masked_preview, summary, tested_titles, provider, thinking=thinking
+                title_lengths,
+                masked_preview,
+                summary,
+                tested_titles,
+                provider,
+                thinking=thinking,
+                known_words=ctx.known_words,
+                slot_lengths=slot_lengths,
             )
             if llm_candidates:
                 words = []
@@ -430,7 +515,24 @@ async def solve_pedantix(
             print_exact_hits(summary)
             print_probe_scores(summary)
 
+
         print("info: ÉCHEC : Aucun candidat n'a résolu la page.")
+
+
+PROVIDER_CHOICES = [
+    "gemini",
+    "groq",
+    "instant",
+    "medium",
+    "gpt",
+    "ollama",
+    "ollama-medium",
+    "ollama-small",
+    "ollama-mini",
+    "gemma4-e2b",
+    "gemma4-e4b",
+    "gemma4-26b",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -439,17 +541,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--provider",
         default="groq",
-        choices=[
-            "gemini",
-            "groq",
-            "instant",
-            "medium",
-            "gpt",
-            "ollama",
-            "ollama-medium",
-            "ollama-small",
-            "ollama-mini",
-        ],
+        choices=PROVIDER_CHOICES,
+    )
+    parser.add_argument(
+        "--sub-provider",
+        default="ollama-small",
+        choices=PROVIDER_CHOICES,
+        help="Provider secondaire utilisé par les sous-agents en mode agent.",
     )
     parser.add_argument("--max-candidates", type=int, default=20)
     parser.add_argument("--max-iterations", type=int, default=5)
@@ -468,6 +566,7 @@ if __name__ == "__main__":
     asyncio.run(
         solve_pedantix(
             provider=args.provider,
+            sub_provider=args.sub_provider,
             max_candidates=args.max_candidates,
             max_iterations=args.max_iterations,
             verbose=args.verbose,

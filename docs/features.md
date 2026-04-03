@@ -1,28 +1,40 @@
 # Fonctionnalites API
 
-Ce document detaille les fonctionnalites de l'API LLM code analyzer.
+Ce document detaille les fonctionnalites exposees par l'API FastAPI.
 
-## Streaming SSE (Server-Sent Events)
+## Endpoint principal
 
-L'API utilise FastAPI pour envoyer des reponses LLM en temps reel.
-- Endpoint : `POST /analyze/`
-- Activation automatique via le parametre `-N` ou `stream=True`.
-- Reduction du temps d'attente pour le premier token.
+- Endpoint: `POST /analyze/`
+- Type de reponse: `text/event-stream` (SSE)
+- Cas d'usage: generation de documentation technique et reponse a une question sur un contenu donne
 
-## Multi-provider et fallback
+## Contrat de requete
 
-L'architecture supporte plusieurs fournisseurs pour garantir la resilience.
-- Groq : Llama 3.1 8b, Llama 3.3 70b, GPT-OSS 120b.
-- Google Gemini : Gemini 1.5 Flash-Lite avec Thinking Mode.
-- Fallback : Basculement dynamique en cas d'erreur (via retry).
+Le schema `AnalysisRequest` valide:
+- `content` (obligatoire)
+- `language` (defaut: `python`)
+- `mode` (`doc` ou `question`)
+- `question` (optionnel, utile en mode `question`)
+- `provider` (valeurs supportees par le registry)
+
+## Providers supportes
+
+- Groq: `groq`, `instant`, `medium`, `gpt`
+- Gemini: `gemini`
+- Ollama local: `ollama`, `ollama-medium`, `ollama-small`, `ollama-mini`, `ollama-llama3`
 
 ## Modes d'analyse
 
-1. Documentation (`doc`) : Genere une documentation Markdown structuree.
-2. Question Answering (`question`) : Repond a des questions basees sur un document.
+1. `doc`: genere une documentation Markdown structuree.
+2. `question`: repond de facon concise a partir du contenu fourni.
 
-## Resilience et validation
+## Resilience et robustesse
 
-- Tenacity : Retry avec backoff exponentiel.
-- Pydantic V2 : Validation des schemas.
-- System Prompts : Prompts optimises pour reduire la consommation de tokens.
+- Retry Groq en streaming via Tenacity (backoff exponentiel).
+- Gestion des erreurs provider avec message technique controle.
+- Normalisation des comportements providers (streaming + appels agent non-streaming).
+
+## Validation et prompts
+
+- Validation stricte Pydantic pour eviter les payloads invalides.
+- Prompts systeme centralises (`doc` et `question`) pour garder une sortie stable.

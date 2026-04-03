@@ -31,14 +31,20 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      - name: Install Ruff
-        run: pip install ruff==0.9.10
+      - name: Install lint tooling
+        run: pip install ruff==0.9.10 pre-commit==4.5.1
 
       - name: Ruff check (linting)
         run: ruff check app/ tests/
 
       - name: Ruff format check
         run: ruff format --check app/ tests/
+
+      - name: Pre-commit hooks (quality baseline)
+        run: |
+          pre-commit run ruff --all-files
+          pre-commit run ruff-format --all-files
+          pre-commit run detect-secrets --all-files
 
   # ──────────────────────────────────────────────
   # etape 1b : tests unitaires + couverture (parallele)
@@ -67,7 +73,7 @@ jobs:
             --cov=app \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
-            --cov-fail-under=40
+            --cov-fail-under=90
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4

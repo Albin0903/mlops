@@ -1,17 +1,17 @@
 import json
-import os
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from scripts.pedantix.models import normalize_text
 
-DATA_DIR = "data"
-os.makedirs(DATA_DIR, exist_ok=True)
-CACHE_DB_PATH = os.path.join(DATA_DIR, "pedantix_cache.db")
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_DB_PATH = DATA_DIR / "pedantix_cache.db"
 
 
 def init_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(CACHE_DB_PATH)
+    conn = sqlite3.connect(str(CACHE_DB_PATH))
     conn.execute("""
         CREATE TABLE IF NOT EXISTS pedantix_guesses (
             puzzle_num INTEGER,
@@ -39,7 +39,7 @@ def get_cached_results(conn: sqlite3.Connection, puzzle_num: int, words: list[st
         try:
             results[word] = json.loads(response_json)
         except json.JSONDecodeError:
-            print(f"  [DEBUG] Failed to decode JSON from cache for {word}")
+            print(f"  info: cache json decode failed for word={word}")
     return results
 
 
