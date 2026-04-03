@@ -90,8 +90,8 @@ Regles de dependance:
 - [x] Phase 3 - Observabilite decouplee via composants dedies.
 - [x] Phase 4 (partiel) - Defaut provider local passe a `gemma4b` + aliases enrichis pour appel des modeles.
 - [x] Phase 4 (partiel) - Hygiene outillage/debug via dossier `tmp/` et ignore git des artefacts locaux.
-- [ ] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
-- [ ] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
+- [x] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
+- [x] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
 - [ ] Phase 5 - Refonte de la pyramide de tests (unitaires, contrats adapters, integration streaming, E2E minimal).
 - [ ] Phase 5 - Documentation et consignes agents harmonisees avec l'etat reel du code.
 - [ ] Phase 5 - Decommission legacy hors coeur API-first (solveurs/bots/bench ad hoc).
@@ -99,8 +99,7 @@ Regles de dependance:
 
 ## Suite immediate (ordre de travail)
 
-1. Finaliser la rationalisation outillage/dependances (Phase 4).
-2. Aligner completement les gates pre-commit + GitHub Actions (Phase 4 qualite automatisee).
-3. Executer la refonte tests par couche/contrat/integration/E2E minimal (Phase 5).
-4. Harmoniser la doc et les directives agents sur le flux API-only courant (Phase 5).
-5. Decommissionner les modules legacy non API-first (Phase 5) avant cutover release (Phase 6).
+1. Executer la refonte tests par couche/contrat/integration/E2E minimal (Phase 5).
+2. Harmoniser la doc et les directives agents sur le flux API-only courant (Phase 5).
+3. Decommissionner les modules legacy non API-first (Phase 5).
+4. Basculer sur le cutover final (Phase 6): entree principale, nettoyage ancien chemin, stabilisation release.
