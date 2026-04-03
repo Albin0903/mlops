@@ -30,7 +30,7 @@ Reference: [docs/api_only_migration_plan.md](docs/api_only_migration_plan.md)
 - [ ] Ajouter un screenshot du dashboard Grafana dans le README
 - [ ] Ajouter un screenshot du dashboard Langfuse dans le README
 - [ ] Tester `.devcontainer` sur GitHub Codespaces (lancement en un clic)
-- [x] Corriger le Dockerfile : Python 3.12 dans le build vs 3.13 dans la CI (aligner)
+- [x] Aligner la stack Python projet en 3.14 (Dockerfile, CI, devcontainer, scripts Dagger/tests)
 
 ## Automatisation DX (Developer Experience)
 - [x] **Makefile / Justfile** : centraliser les commandes sous des alias simples

@@ -19,7 +19,7 @@ async def test_pedantix():
     """
     Script de test dédié pour valider le solveur Pedantix via Dagger.
     """
-    python_version = "3.13"
+    python_version = "3.14"
 
     # Vérification des credentials
     gemini_key = os.getenv("GEMINI_API_KEY")

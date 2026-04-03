@@ -13,7 +13,7 @@ load_dotenv()
 
 async def main():
     # Configuration
-    python_version = "3.13"
+    python_version = "3.14"
     results = {}
     pipeline_start = time.time()
 

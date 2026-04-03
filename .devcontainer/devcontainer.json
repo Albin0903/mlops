@@ -1,6 +1,6 @@
 {
   "name": "MLOps LLM Analyzer",
-  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "image": "mcr.microsoft.com/devcontainers/python:3.14",
   "remoteUser": "vscode",
   "containerUser": "vscode",
   "updateRemoteUserUID": false,
@@ -15,7 +15,7 @@
     "ghcr.io/devcontainers/features/terraform:1": "latest",
     "ghcr.io/devcontainers/features/github-cli:1": "latest"
   },
-  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements-dev.txt && pre-commit install",
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements-dev.txt && pre-commit install --hook-type pre-commit && pre-commit install --hook-type pre-push",
   "customizations": {
     "vscode": {
       "extensions": [

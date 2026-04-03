@@ -1,5 +1,5 @@
 # etape 1 : construction et dependances
-FROM python:3.13-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 # definition des variables d'environnement pour la construction
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --prefix=/install -r requirements.txt
 
 # etape 2 : image finale
-FROM python:3.13-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 # securite : definition d'un utilisateur non-root
 RUN groupadd -r mlops && useradd -r -g mlops -s /sbin/nologin -d /app mlops

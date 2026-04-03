@@ -1,7 +1,7 @@
 # LLM Code Analyzer (MLOps/LLMOps)
 
 CI Pipeline: https://github.com/Albin0903/mlops/actions/workflows/ci.yml
-Python: 3.13
+Python: 3.14
 Docker: multi-stage
 
 Plateforme API-first pour l'analyse de code en streaming SSE avec providers LLM multiples et observabilite integree.
@@ -37,11 +37,10 @@ curl -N -X POST http://localhost:8000/analyze/ \
 
 ```bash
 make ci-local
-make prepush
 ```
 
 Gate principal:
-- Ruff (`check` + `format --check`)
+- Prepush quality gates (ruff, format, yaml, secrets, terraform, manifests K8s)
 - Pytest complet
 - Couverture minimale enforcee a 90%
 

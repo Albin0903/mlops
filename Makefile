@@ -16,7 +16,7 @@ help:
 	@echo "  make format       - Formate le code (ruff-format)"
 	@echo "  make quality      - Lance pre-commit sur tout le depot"
 	@echo "  make prepush      - Lance les checks du stage pre-push"
-	@echo "  make ci-local     - Reproduit localement le gate qualite principal"
+	@echo "  make ci-local     - Reproduit localement le gate complet (prepush + tests)"
 	@echo "  make build-local  - Build image Docker et charge dans Minikube"
 	@echo "  make deploy       - Deploie les manifestes Kubernetes"
 	@echo "  make demo         - One-command local : build + deploy + port-forward"
@@ -54,7 +54,7 @@ quality:
 prepush:
 	$(PYTHON) -m pre_commit run --hook-stage pre-push --all-files
 
-ci-local: lint test
+ci-local: prepush test
 
 build-local:
 	docker build -t mlops-api:latest .

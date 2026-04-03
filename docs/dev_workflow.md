@@ -36,7 +36,7 @@ make install
 Avant push, executer dans cet ordre:
 
 ```bash
-make prepush
+make ci-local
 python scripts/dagger_ci.py
 ```
 

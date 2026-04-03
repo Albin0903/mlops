@@ -19,7 +19,7 @@ Quelques regles simples pour garder le code propre et coherent.
 
 - Python : le code suit les regles `ruff` et est couvert par `pytest`.
 - Creer une branche `feature/*` ou `bugfix/*` avant les commits, puis integrer vers `develop` apres validations.
-- Avant merge : executer `make ci-local` (lint + tests + couverture minimale 90%).
+- Avant merge : executer `make ci-local` (gates prepush + tests + couverture minimale 90%).
 - Terraform : modules independants, backend distant pour l'etat.
 - Les logs restent structures et lisibles (`info: processing started for {filename}`), sans decoration.
 - Pas d'alignement d'operateurs `=` — on garde le code compact.
