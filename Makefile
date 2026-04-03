@@ -2,16 +2,22 @@
 # Makefile - workflow local standardise (API-only)
 # -----------------------------------------------------------------------------
 
-.PHONY: help install dev test test-fast lint format quality prepush ci-local build-local deploy monitoring benchmark demo up-local clean
+.PHONY: help install install-optional dev test test-fast test-unit test-contract test-integration test-e2e test-pyramid lint format quality prepush ci-local build-local deploy monitoring benchmark demo up-local clean
 
 PYTHON ?= python
 
 help:
 	@echo "Commandes disponibles :"
 	@echo "  make install      - Installe dependances + hooks pre-commit et pre-push"
+	@echo "  make install-optional - Installe les dependances optionnelles (dagger, locust, selenium)"
 	@echo "  make dev          - Lance l'API en mode developpement"
 	@echo "  make test         - Lance tous les tests avec couverture"
 	@echo "  make test-fast    - Lance un sous-ensemble de tests rapides"
+	@echo "  make test-unit    - Lance les tests unitaires par couche"
+	@echo "  make test-contract - Lance les tests de contrats/adapters"
+	@echo "  make test-integration - Lance les tests d'integration applicative"
+	@echo "  make test-e2e     - Lance le scenario E2E minimal API-only"
+	@echo "  make test-pyramid - Lance la pyramide complete (unit -> contract -> integration -> e2e)"
 	@echo "  make lint         - Verifie le style (ruff)"
 	@echo "  make format       - Formate le code (ruff-format)"
 	@echo "  make quality      - Lance pre-commit sur tout le depot"
@@ -31,6 +37,9 @@ install:
 	$(PYTHON) -m pre_commit install --hook-type pre-commit
 	$(PYTHON) -m pre_commit install --hook-type pre-push
 
+install-optional:
+	$(PYTHON) -m pip install -r requirements-optional.txt
+
 dev:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
@@ -39,6 +48,20 @@ test:
 
 test-fast:
 	$(PYTHON) -m pytest -q tests/test_api.py tests/test_health.py tests/test_schemas.py tests/test_llm_service.py
+
+test-unit:
+	$(PYTHON) -m pytest -q tests/test_domain_contracts.py tests/test_application_use_cases.py tests/test_provider_resolution.py tests/test_prompt_and_provider_registry.py tests/test_llm_policies.py
+
+test-contract:
+	$(PYTHON) -m pytest -q tests/test_llm_factory.py tests/test_llm_providers_and_observability.py tests/test_observability_gateway_adapter.py
+
+test-integration:
+	$(PYTHON) -m pytest -q tests/test_api.py tests/test_health.py tests/test_infrastructure_composition.py tests/test_llm_service.py tests/integration/test_pedantix_solver.py
+
+test-e2e:
+	$(PYTHON) -m pytest -q tests/e2e/
+
+test-pyramid: test-unit test-contract test-integration test-e2e
 
 lint:
 	$(PYTHON) -m ruff check app/ tests/

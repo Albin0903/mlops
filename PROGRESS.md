@@ -10,6 +10,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Providers actifs: Groq, Gemini, Ollama (avec alias provider)
 - [x] Gate qualite alignee local + CI (`make ci-local` et workflow GitHub)
 - [x] Couverture enforcee: 90% minimum, couverture mesuree ~98%
+- [x] Pyramide de tests executable par couche (`make test-unit`, `make test-contract`, `make test-integration`, `make test-e2e`)
 
 ## Plan refonte API-only (transversal)
 - [x] Phase 0 - Baseline produit figee (analyze, health, providers, observabilite, CI, container)

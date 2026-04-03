@@ -92,6 +92,7 @@ Regles de dependance:
 - [x] Phase 4 (partiel) - Hygiene outillage/debug via dossier `tmp/` et ignore git des artefacts locaux.
 - [x] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
 - [x] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
+- [ ] Phase 5 (en cours) - Pyramide de tests structuree (cibles unit/contract/integration/e2e + scenario E2E minimal).
 - [ ] Phase 5 - Refonte de la pyramide de tests (unitaires, contrats adapters, integration streaming, E2E minimal).
 - [ ] Phase 5 - Documentation et consignes agents harmonisees avec l'etat reel du code.
 - [ ] Phase 5 - Decommission legacy hors coeur API-first (solveurs/bots/bench ad hoc).

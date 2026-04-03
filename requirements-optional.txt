@@ -1,0 +1,6 @@
+# dependances optionnelles (hors gate core ci-local)
+# installer uniquement si vous utilisez ces workflows.
+
+dagger-io>=0.13.0
+locust==2.33.0
+selenium>=4.28.0

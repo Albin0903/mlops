@@ -40,6 +40,8 @@ jobs:
         run: pip install ruff==0.9.10 pre-commit==4.5.1
 
       - name: Run prepush quality gates
+        env:
+          TERRAFORM_VALIDATE_SCOPE: all
         run: make prepush
 
   # ──────────────────────────────────────────────

@@ -21,6 +21,9 @@ Plateforme API-first pour l'analyse de code en streaming SSE avec providers LLM 
 # 1) Installer dependances + hooks
 make install
 
+# 1-bis) Optionnel: installer les outils hors gate core (dagger, locust, selenium)
+make install-optional
+
 # 2) Lancer l'API
 make dev
 
@@ -43,6 +46,16 @@ Gate principal:
 - Prepush quality gates (ruff, format, yaml, secrets, terraform, manifests K8s)
 - Pytest complet
 - Couverture minimale enforcee a 90%
+
+Execution par couche (Phase 5):
+
+```bash
+make test-unit
+make test-contract
+make test-integration
+make test-e2e
+make test-pyramid
+```
 
 ## Providers supportes
 
