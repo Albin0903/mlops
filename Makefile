@@ -2,7 +2,7 @@
 # Makefile - workflow local standardise (API-only)
 # -----------------------------------------------------------------------------
 
-.PHONY: help install install-optional dev test test-fast test-unit test-contract test-integration test-e2e test-pyramid lint format quality prepush ci-local build-local deploy monitoring benchmark demo up-local clean
+.PHONY: help install install-optional check-api-core-boundaries dev test test-fast test-unit test-contract test-integration test-e2e test-pyramid lint format quality prepush ci-local build-local deploy monitoring benchmark legacy-pedantix legacy-tusmo demo up-local clean
 
 PYTHON ?= python
 
@@ -21,10 +21,13 @@ help:
 	@echo "  make lint         - Verifie le style (ruff)"
 	@echo "  make format       - Formate le code (ruff-format)"
 	@echo "  make quality      - Lance pre-commit sur tout le depot"
+	@echo "  make check-api-core-boundaries - Verifie qu'aucun import app/ -> scripts/tests n'existe"
 	@echo "  make prepush      - Lance les checks du stage pre-push"
 	@echo "  make ci-local     - Reproduit localement le gate complet (prepush + tests)"
 	@echo "  make build-local  - Build image Docker et charge dans Minikube"
 	@echo "  make deploy       - Deploie les manifestes Kubernetes"
+	@echo "  make legacy-pedantix - Lance explicitement le CLI legacy Pedantix (hors core API)"
+	@echo "  make legacy-tusmo - Lance explicitement le CLI legacy Tusmo (hors core API)"
 	@echo "  make demo         - One-command local : build + deploy + port-forward"
 	@echo "  make up-local     - Alias de make demo"
 	@echo "  make monitoring   - Affiche les commandes de port-forward"
@@ -39,6 +42,9 @@ install:
 
 install-optional:
 	$(PYTHON) -m pip install -r requirements-optional.txt
+
+check-api-core-boundaries:
+	$(PYTHON) scripts/check_api_core_boundaries.py
 
 dev:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -74,7 +80,7 @@ format:
 quality:
 	$(PYTHON) -m pre_commit run --all-files
 
-prepush:
+prepush: check-api-core-boundaries
 	$(PYTHON) -m pre_commit run --hook-stage pre-push --all-files
 
 ci-local: prepush test
@@ -99,6 +105,14 @@ monitoring:
 
 benchmark:
 	locust -f tests/locustfile.py --host http://localhost:8000 --users 5 --spawn-rate 1 --run-time 1m --headless
+
+legacy-pedantix:
+	@echo "info: execution legacy explicite (hors coeur API-only)"
+	$(PYTHON) scripts/pedantix/cli.py --help
+
+legacy-tusmo:
+	@echo "info: execution legacy explicite (hors coeur API-only)"
+	$(PYTHON) scripts/tusmo/cli.py --help
 
 clean:
 	find . -type d -name '__pycache__' -prune -exec rm -rf {} +

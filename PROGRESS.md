@@ -12,6 +12,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Couverture enforcee: 90% minimum, couverture mesuree ~98%
 - [x] Pyramide de tests executable par couche (`make test-unit`, `make test-contract`, `make test-integration`, `make test-e2e`)
 - [x] Garde d'architecture API-first: `app/` isole du legacy (`scripts/`) et des tests (`tests/`)
+- [x] Check CI hors pytest sur les frontieres API-core (`scripts/check_api_core_boundaries.py` via `make prepush`)
 
 ## Plan refonte API-only (transversal)
 - [x] Phase 0 - Baseline produit figee (analyze, health, providers, observabilite, CI, container)
@@ -32,7 +33,7 @@ Ce document suit l'avancement du projet MLOps/LLMOps. Concu comme une veritable 
 - [x] Phase 4 - Qualite automatisee (gates locaux/CI pleinement unifies)
 - [x] Phase 5 - Refonte tests (pyramide complete par couche/contrat/integration/E2E)
 - [ ] Phase 5 - Documentation et instructions IA harmonisees sur la nouvelle architecture (en cours)
-- [ ] Phase 5 - Decommission legacy hors coeur API-first
+- [ ] Phase 5 - Decommission legacy hors coeur API-first (en cours: execution explicite via Makefile)
 - [ ] Phase 6 - Cutover final et stabilisation release
 
 Reference contrat: [docs/api_only_migration_plan.md](docs/api_only_migration_plan.md)

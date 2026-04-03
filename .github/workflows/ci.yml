@@ -39,6 +39,9 @@ jobs:
       - name: Install quality tooling
         run: pip install ruff==0.9.10 pre-commit==4.5.1
 
+      - name: Enforce API core boundaries
+        run: python scripts/check_api_core_boundaries.py
+
       - name: Run prepush quality gates
         env:
           TERRAFORM_VALIDATE_SCOPE: all

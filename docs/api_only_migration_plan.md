@@ -93,10 +93,10 @@ Regles de dependance:
 - [x] Phase 4 - Tooling simplifie complet (rationalisation finale des dependances runtime/dev).
 - [x] Phase 4 - Qualite automatisee complete (parite locale/CI strictement bloquante sur tous les gates).
 - [ ] Phase 5 (en cours) - Pyramide de tests structuree (cibles unit/contract/integration/e2e + scenario E2E minimal).
-- [ ] Phase 5 (en cours) - Garde de frontiere active: `app/` ne depend pas de `scripts/` ni `tests/` (test d'architecture).
+- [x] Phase 5 - Garde de frontiere active: `app/` ne depend pas de `scripts/` ni `tests/` (test + check CI hors pytest).
 - [x] Phase 5 - Refonte de la pyramide de tests (unitaires, contrats adapters, integration streaming, E2E minimal).
 - [ ] Phase 5 - Documentation et consignes agents harmonisees avec l'etat reel du code (en cours).
-- [ ] Phase 5 - Decommission legacy hors coeur API-first (solveurs/bots/bench ad hoc).
+- [ ] Phase 5 - Decommission legacy hors coeur API-first (en cours: execution explicite via cibles Makefile dediees).
 - [ ] Phase 6 - Cutover final (entree principale, nettoyage ancien chemin, stabilisation release).
 
 ## Suite immediate (ordre de travail)
