@@ -1,8 +1,10 @@
 import json
 from typing import Any
 
-from app.services.llm_service import llm_service
+from app.infrastructure.composition import get_execute_agent_call_use_case
 from scripts.tusmo.entropy import TusmoSolver
+
+execute_agent_call_use_case = get_execute_agent_call_use_case()
 
 # Définition des schémas d'outils pour Tusmo
 TOOLS = [
@@ -77,7 +79,7 @@ class TusmoAgent:
         for turn in range(1, self.max_turns + 1):
             print(f"\ninfo: --- Tour Agent {turn}/{self.max_turns} ---")
 
-            response_data = await llm_service.execute_agent_call(
+            response_data = await execute_agent_call_use_case.execute(
                 messages=self.history,
                 tools=TOOLS,
                 provider=self.provider,
@@ -124,7 +126,8 @@ class TusmoAgent:
                     })
 
                     if name == "submit_guess" and observation.get("solved"):
-                        print(f"info: Agent Victoire ! Le mot était : {args.get('word').upper()}")
+                        solved_word = (args.get("word") or "").upper()
+                        print(f"info: Agent Victoire ! Le mot était : {solved_word}")
                         return
 
     async def execute_tool(self, name: str, args: dict) -> Any:
@@ -153,7 +156,7 @@ class TusmoAgent:
             }
 
         elif name == "get_game_overview":
-            bien_placees = "".join([l if l else "." for l in self.solver.lettres_bien_placees])
+            bien_placees = "".join([letter if letter else "." for letter in self.solver.lettres_bien_placees])
             return {
                 "longueur": self.solver.longueur,
                 "bien_placees": bien_placees,

@@ -1,29 +1,51 @@
-from typing import Optional
-
 from app.core.config import settings
 from app.services.llm.base import BaseLLMProvider
 
-# Cache des instances de providers
-PROVIDERS = {}
 
+class LLMProviderRegistry:
+    def __init__(self):
+        # Cache des instances de providers
+        self._providers: dict[str, BaseLLMProvider] = {}
 
-def get_provider(provider_name: str) -> Optional[BaseLLMProvider]:
-    """Factory pour obtenir un provider LLM initialise"""
+    def get_provider(self, provider_name: str) -> BaseLLMProvider | None:
+        """Factory pour obtenir un provider LLM initialise"""
 
-    if provider_name not in PROVIDERS:
+        if provider_name not in self._providers:
+            provider = self._create_provider(provider_name)
+            if provider is None:
+                return None
+            self._providers[provider_name] = provider
+
+        return self._providers[provider_name]
+
+    def clear_cache(self) -> None:
+        self._providers.clear()
+
+    @staticmethod
+    def _create_provider(provider_name: str) -> BaseLLMProvider | None:
         if provider_name == "groq" and settings.groq_api_key:
             from app.services.llm.groq import GroqProvider
 
-            PROVIDERS[provider_name] = GroqProvider()
-        elif provider_name == "gemini" and settings.gemini_api_key:
+            return GroqProvider()
+
+        if provider_name == "gemini" and settings.gemini_api_key:
             from app.services.llm.gemini import GeminiProvider
 
-            PROVIDERS[provider_name] = GeminiProvider()
-        elif provider_name == "ollama":
+            return GeminiProvider()
+
+        if provider_name == "ollama":
             from app.services.llm.ollama import OllamaProvider
 
-            PROVIDERS[provider_name] = OllamaProvider()
-        else:
-            return None
+            return OllamaProvider()
 
-    return PROVIDERS[provider_name]
+        return None
+
+
+def get_provider(provider_name: str, registry: LLMProviderRegistry | None = None) -> BaseLLMProvider | None:
+    active_registry = registry or LLMProviderRegistry()
+    return active_registry.get_provider(provider_name)
+
+
+def clear_provider_cache(registry: LLMProviderRegistry | None = None) -> None:
+    if registry is not None:
+        registry.clear_cache()

@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator, cast
 
 from app.core.config import settings
 from app.services.llm.base import BaseLLMProvider
+from app.services.llm.common import build_text_result, build_tool_calls_result, parse_tool_arguments
 from app.services.llm.policies import GEMINI_THINKING_LEVEL
 
 
@@ -73,8 +74,7 @@ class GeminiProvider(BaseLLMProvider):
                 tool_calls = cast(list[dict[str, Any]], msg.get("tool_calls", []))
                 for call in tool_calls:
                     function_data = cast(dict[str, Any], call.get("function", {}))
-                    raw_args = function_data.get("arguments", {})
-                    args_dict = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+                    args_dict = parse_tool_arguments(function_data.get("arguments", {}))
                     function_name = str(function_data.get("name", "unknown"))
                     parts.append(types.Part.from_function_call(name=function_name, args=args_dict))
                 if parts:
@@ -129,6 +129,6 @@ class GeminiProvider(BaseLLMProvider):
                 if hasattr(part, "function_call") and part.function_call:
                     calls.append({"name": part.function_call.name, "args": part.function_call.args})
             if calls:
-                return {"type": "tool_calls", "calls": calls}
+                return build_tool_calls_result(calls)
 
-        return {"type": "text", "content": response.text}
+        return build_text_result(response.text)

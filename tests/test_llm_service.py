@@ -57,6 +57,10 @@ class TestProviderConfig:
         assert "gemini" in PROVIDER_MODELS
         assert "ollama-mini" in PROVIDER_MODELS
         assert PROVIDER_MODELS["ollama-mini"] == "qwen3.5:0.8b"
+        assert "ollama" in PROVIDER_MODELS
+        assert PROVIDER_MODELS["ollama"] == "qwen3.5:9b"
+        assert PROVIDER_MODELS["gemma4-e2b"] == "gemma4:e2b"
+        assert PROVIDER_MODELS["gemma4-e4b"] == "gemma4:e4b"
 
 
 class TestStreamingResponse:
@@ -211,3 +215,193 @@ class TestOllamaContextSizing:
         monkeypatch.setattr("app.services.llm.ollama._detect_total_vram_mb", lambda: 6144)
 
         assert _select_num_ctx("qwen3.5:9b") == 4096
+
+    def test_parse_model_size_gemma4_expert_tag(self):
+        assert _parse_model_size_billion("gemma4:e4b") == 4.0
+        assert _parse_model_size_billion("gemma4:e2b") == 2.0
+
+    def test_select_num_ctx_for_gemma4_e4b(self, monkeypatch):
+        monkeypatch.setattr("app.services.llm.ollama._detect_total_vram_mb", lambda: 6144)
+
+        assert _select_num_ctx("gemma4:e4b") == 8192
+
+
+class TestProviderResolution:
+    """tests sur la resolution du provider reel"""
+
+    def test_resolve_gemini(self):
+        service = LLMService.__new__(LLMService)
+        assert service._resolve_provider("gemini", "gemini-3.1-flash-lite-preview") == "gemini"
+
+    def test_resolve_ollama_variants(self):
+        service = LLMService.__new__(LLMService)
+        assert service._resolve_provider("ollama", "qwen3.5:9b") == "ollama"
+        assert service._resolve_provider("ollama-small", "qwen3.5:2b") == "ollama"
+
+    def test_resolve_groq_default(self):
+        service = LLMService.__new__(LLMService)
+        assert service._resolve_provider("groq", "llama-3.1-8b-instant") == "groq"
+
+
+class TestExecuteAgentCall:
+    """tests du execute_agent_call avec mocking"""
+
+    @pytest.mark.asyncio
+    async def test_agent_call_returns_text(self):
+        """un appel agent sans tool_calls doit retourner du texte"""
+
+        class FakeProvider:
+            async def execute_agent_call(self, messages, model, tools, thinking=None):
+                return {"type": "text", "content": "Analyse en cours"}
+
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()):
+            service = LLMService.__new__(LLMService)
+            result = await service.execute_agent_call(prompt="test", system_message="system", provider="groq")
+            assert result["type"] == "text"
+            assert result["content"] == "Analyse en cours"
+
+    @pytest.mark.asyncio
+    async def test_agent_call_returns_tool_calls(self):
+        """un appel agent avec tool_calls doit retourner les appels d'outils"""
+
+        class FakeProvider:
+            async def execute_agent_call(self, messages, model, tools, thinking=None):
+                return {
+                    "type": "tool_calls",
+                    "calls": [{"name": "get_game_state", "args": {}}],
+                }
+
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()):
+            service = LLMService.__new__(LLMService)
+            result = await service.execute_agent_call(
+                prompt="test", system_message="system", tools=[{"type": "function"}], provider="groq"
+            )
+            assert result["type"] == "tool_calls"
+            assert len(result["calls"]) == 1
+            assert result["calls"][0]["name"] == "get_game_state"
+
+    @pytest.mark.asyncio
+    async def test_agent_call_uses_resolved_provider_and_model(self):
+        class FakeProvider:
+            async def execute_agent_call(self, messages, model, tools, thinking=None):
+                return {"type": "text", "content": model}
+
+        with patch("app.services.llm_service.get_provider", return_value=FakeProvider()) as mocked_get_provider:
+            service = LLMService.__new__(LLMService)
+            result = await service.execute_agent_call(
+                prompt="test",
+                system_message="system",
+                provider="medium",
+                resolved_provider="groq",
+                resolved_model="llama-3.3-70b-versatile",
+            )
+
+            assert result["type"] == "text"
+            assert result["content"] == "llama-3.3-70b-versatile"
+            mocked_get_provider.assert_called_once_with("groq")
+
+
+class FakeObservabilityGateway:
+    def __init__(self):
+        self.start_calls: list[dict] = []
+        self.error_mark_calls: list[dict] = []
+        self.end_calls: list[dict] = []
+        self.success_calls: list[dict] = []
+        self.error_calls: list[dict] = []
+
+    def start_generation(self, **kwargs):
+        self.start_calls.append(kwargs)
+        return "generation"
+
+    def mark_generation_error(self, generation, error_message: str):
+        self.error_mark_calls.append({"generation": generation, "error_message": error_message})
+
+    def end_generation(self, **kwargs):
+        self.end_calls.append(kwargs)
+
+    def record_success(self, **kwargs):
+        self.success_calls.append(kwargs)
+
+    def record_error(self, **kwargs):
+        self.error_calls.append(kwargs)
+
+
+class TestObservabilityGatewayIntegration:
+    @pytest.mark.asyncio
+    async def test_streaming_reports_success_to_observability_gateway(self):
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model, **kwargs):
+                yield "Hello", 11, 13
+
+        fake_observability = FakeObservabilityGateway()
+        with (
+            patch("app.services.llm_service.get_provider", return_value=FakeProvider()),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
+            mock_settings.langfuse_enabled = True
+            service = LLMService(observability_gateway=fake_observability)
+
+            chunks = []
+            async for chunk in service.get_streaming_response("test", "system", provider="groq"):
+                chunks.append(chunk)
+
+        assert chunks == ["Hello"]
+        assert len(fake_observability.start_calls) == 1
+        assert fake_observability.start_calls[0]["provider"] == "groq"
+        assert len(fake_observability.success_calls) == 1
+        usage = fake_observability.success_calls[0]["usage"]
+        assert usage.input_tokens == 11
+        assert usage.output_tokens == 13
+        assert len(fake_observability.end_calls) == 1
+        assert fake_observability.end_calls[0]["generation"] == "generation"
+
+    @pytest.mark.asyncio
+    async def test_streaming_reports_error_to_observability_gateway(self):
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model, **kwargs):
+                raise RuntimeError("network down")
+                yield ""  # pragma: no cover
+
+        fake_observability = FakeObservabilityGateway()
+        with (
+            patch("app.services.llm_service.get_provider", return_value=FakeProvider()),
+            patch("app.services.llm_service.settings") as mock_settings,
+        ):
+            mock_settings.langfuse_enabled = False
+            service = LLMService(observability_gateway=fake_observability)
+
+            chunks = []
+            async for chunk in service.get_streaming_response("test", "system", provider="groq"):
+                chunks.append(chunk)
+
+        assert len(chunks) == 1
+        assert "[Erreur technique" in chunks[0]
+        assert len(fake_observability.error_mark_calls) == 1
+        assert len(fake_observability.error_calls) == 1
+        assert fake_observability.error_calls[0]["error_message"] == "network down"
+        assert fake_observability.success_calls == []
+
+
+class TestProviderGetterInjection:
+    @pytest.mark.asyncio
+    async def test_streaming_uses_injected_provider_getter(self):
+        class FakeProvider:
+            async def stream_response(self, prompt, system_message, model, **kwargs):
+                yield "ok", 1, 2
+
+        calls: list[str] = []
+
+        def fake_get_provider(provider_name: str):
+            calls.append(provider_name)
+            return FakeProvider()
+
+        with patch("app.services.llm_service.settings") as mock_settings:
+            mock_settings.langfuse_enabled = False
+            service = LLMService(provider_getter=fake_get_provider)
+
+            chunks = []
+            async for chunk in service.get_streaming_response("test", "system", provider="gemini"):
+                chunks.append(chunk)
+
+        assert chunks == ["ok"]
+        assert calls == ["gemini"]
