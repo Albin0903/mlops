@@ -50,7 +50,7 @@ test-fast:
 	$(PYTHON) -m pytest -q tests/test_api.py tests/test_health.py tests/test_schemas.py tests/test_llm_service.py
 
 test-unit:
-	$(PYTHON) -m pytest -q tests/test_domain_contracts.py tests/test_application_use_cases.py tests/test_provider_resolution.py tests/test_prompt_and_provider_registry.py tests/test_llm_policies.py
+	$(PYTHON) -m pytest -q tests/test_domain_contracts.py tests/test_application_use_cases.py tests/test_provider_resolution.py tests/test_prompt_and_provider_registry.py tests/test_llm_policies.py tests/test_architecture_boundaries.py
 
 test-contract:
 	$(PYTHON) -m pytest -q tests/test_llm_factory.py tests/test_llm_providers_and_observability.py tests/test_observability_gateway_adapter.py
