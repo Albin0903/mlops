@@ -19,7 +19,7 @@ class TestAnalysisRequestDefaults:
         assert req.language == "python"
         assert req.mode == "doc"
         assert req.question is None
-        assert req.provider == "groq"
+        assert req.provider == "gemma4b"
 
     def test_default_language_is_python(self):
         """le langage par defaut doit etre python"""
@@ -31,10 +31,10 @@ class TestAnalysisRequestDefaults:
         req = AnalysisRequest(content="code")
         assert req.mode == "doc"
 
-    def test_default_provider_is_groq(self):
-        """le provider par defaut doit etre groq"""
+    def test_default_provider_is_gemma4b(self):
+        """le provider par defaut doit etre gemma4b"""
         req = AnalysisRequest(content="code")
-        assert req.provider == "groq"
+        assert req.provider == "gemma4b"
 
 
 class TestAnalysisRequestValidation:
@@ -56,7 +56,7 @@ class TestAnalysisRequestValidation:
             AnalysisRequest(content="code", mode="invalid")
 
     def test_invalid_provider_rejected(self):
-        """un provider autre que 'groq' ou 'gemini' doit etre rejete"""
+        """un provider non expose par le registry doit etre rejete"""
         with pytest.raises(ValidationError):
             AnalysisRequest(content="code", provider="openai")
 
@@ -89,6 +89,11 @@ class TestAnalysisRequestValidation:
         """les aliases gemma exposes par le registry sont valides"""
         req = AnalysisRequest(content="code", provider="gemma4-e4b")
         assert req.provider == "gemma4-e4b"
+
+    def test_provider_alias_is_normalized(self):
+        """les aliases provider sont normalises en lowercase"""
+        req = AnalysisRequest(content="code", provider="GeMmA4B")
+        assert req.provider == "gemma4b"
 
 
 class TestAnalysisRequestQuestionMode:

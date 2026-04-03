@@ -9,7 +9,7 @@ from app.domain.usage import TokenUsage
 from app.services import prompt_manager
 from app.services.llm.base import BaseLLMProvider
 from app.services.llm.factory import get_provider
-from app.services.provider_registry import PROVIDER_MODELS, resolve_provider_name
+from app.services.provider_registry import PROVIDER_MODELS, resolve_provider_alias, resolve_provider_name
 
 SYSTEM_PROMPTS = prompt_manager.SYSTEM_PROMPTS
 ProviderGetter = Callable[[str], BaseLLMProvider | None]
@@ -55,7 +55,7 @@ class LLMService:
         prompt: str,
         system_message: str,
         mode: str = "doc",
-        provider: str = "groq",
+        provider: str = "gemma4b",
         thinking: str | bool | None = None,
         json_format: bool = False,
         resolved_provider: str | None = None,
@@ -63,8 +63,9 @@ class LLMService:
     ) -> AsyncGenerator[str, None]:
         """Genere une reponse en streaming avec observabilite et multi-provider"""
 
-        model = resolved_model or PROVIDER_MODELS.get(provider, provider)
-        real_provider_name = resolved_provider or self._resolve_provider(provider, model)
+        provider_alias = resolve_provider_alias(provider)
+        model = resolved_model or PROVIDER_MODELS.get(provider_alias, provider_alias)
+        real_provider_name = resolved_provider or self._resolve_provider(provider_alias, model)
 
         provider_impl = self._get_provider_getter()(real_provider_name)
         if not provider_impl:
@@ -134,7 +135,7 @@ class LLMService:
         prompt: str,
         system_message: str,
         mode: str = "doc",
-        provider: str = "groq",
+        provider: str = "gemma4b",
         thinking: str | bool | None = None,
     ) -> str:
         chunks = []
@@ -148,14 +149,15 @@ class LLMService:
         system_message: str = "",
         messages: list[dict[str, Any]] | None = None,
         tools: list[dict[str, Any]] | None = None,
-        provider: str = "groq",
+        provider: str = "gemma4b",
         thinking: str | bool | None = None,
         resolved_provider: str | None = None,
         resolved_model: str | None = None,
     ) -> dict[str, Any]:
         """Execute un appel agent non-streaming avec support des outils"""
-        model = resolved_model or PROVIDER_MODELS.get(provider, provider)
-        real_provider_name = resolved_provider or self._resolve_provider(provider, model)
+        provider_alias = resolve_provider_alias(provider)
+        model = resolved_model or PROVIDER_MODELS.get(provider_alias, provider_alias)
+        real_provider_name = resolved_provider or self._resolve_provider(provider_alias, model)
 
         if messages is None:
             messages = [

@@ -58,7 +58,8 @@ class TestProviderConfig:
         assert "ollama-mini" in PROVIDER_MODELS
         assert PROVIDER_MODELS["ollama-mini"] == "qwen3.5:0.8b"
         assert "ollama" in PROVIDER_MODELS
-        assert PROVIDER_MODELS["ollama"] == "qwen3.5:9b"
+        assert PROVIDER_MODELS["ollama"] == "gemma4:e4b"
+        assert PROVIDER_MODELS["gemma4b"] == "gemma4:e4b"
         assert PROVIDER_MODELS["gemma4-e2b"] == "gemma4:e2b"
         assert PROVIDER_MODELS["gemma4-e4b"] == "gemma4:e4b"
 
@@ -237,6 +238,7 @@ class TestProviderResolution:
         service = LLMService.__new__(LLMService)
         assert service._resolve_provider("ollama", "qwen3.5:9b") == "ollama"
         assert service._resolve_provider("ollama-small", "qwen3.5:2b") == "ollama"
+        assert service._resolve_provider("gemma4b", "gemma4:e4b") == "ollama"
 
     def test_resolve_groq_default(self):
         service = LLMService.__new__(LLMService)

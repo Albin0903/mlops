@@ -171,7 +171,15 @@ def _candidate_matches_title_lengths(candidate: str, title_lengths: list[int]) -
 
 def _is_small_provider(provider: str) -> bool:
     p = normalize_text(provider)
-    return "ollama-small" in p or "ollama-mini" in p or p.endswith(":2b") or p.endswith(":0.8b")
+    return (
+        "ollama-small" in p
+        or "ollama-mini" in p
+        or "qwen2b" in p
+        or "qwen0.8b" in p
+        or "gemma4-e2b" in p
+        or p.endswith(":2b")
+        or p.endswith(":0.8b")
+    )
 
 
 MORPH_SUFFIXES = [

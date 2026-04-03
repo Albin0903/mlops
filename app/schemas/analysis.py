@@ -18,7 +18,7 @@ class AnalysisRequest(BaseModel):
     mode: str = Field("doc", description="le mode d'utilisation : documentation ou reponse technique")
     question: str | None = Field(None, description="la question specifique si le mode est 'question'")
     provider: str = Field(
-        "groq",
+        "gemma4b",
         description=f"le fournisseur llm a utiliser (valeurs supportees: {PROVIDER_HELP})",
     )
 
@@ -32,6 +32,7 @@ class AnalysisRequest(BaseModel):
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, value: str) -> str:
-        if value not in ALLOWED_PROVIDERS:
+        normalized = value.strip().lower()
+        if normalized not in ALLOWED_PROVIDERS:
             raise ValueError(f"provider invalide: valeurs supportees: {PROVIDER_HELP}")
-        return value
+        return normalized

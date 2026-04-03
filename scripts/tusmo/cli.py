@@ -123,7 +123,7 @@ def main() -> None:
     parser.add_argument("--longueur", type=int, default=6)
     parser.add_argument("--lettre", type=str, default="a")
     parser.add_argument("--room", type=str, default="")
-    parser.add_argument("--provider", type=str, default="groq")
+    parser.add_argument("--provider", type=str, default="gemma4b")
     parser.add_argument("--thinking", choices=["off", "low", "medium", "high"], default="off")
     parser.add_argument("--max-turns", type=int, default=8)
     args = parser.parse_args()

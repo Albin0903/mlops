@@ -46,7 +46,7 @@ TOOLS = [
 ]
 
 class TusmoAgent:
-    def __init__(self, solver: TusmoSolver, provider: str = "groq", thinking: str = "off"):
+    def __init__(self, solver: TusmoSolver, provider: str = "gemma4b", thinking: str = "off"):
         self.solver = solver
         self.provider = provider
         self.thinking = thinking

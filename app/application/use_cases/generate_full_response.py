@@ -17,7 +17,7 @@ class GenerateFullResponseUseCase:
         prompt: str,
         system_message: str,
         mode: str = "question",
-        provider: str = "groq",
+        provider: str = "gemma4b",
         thinking: str | bool | None = None,
         json_format: bool = False,
     ) -> str:

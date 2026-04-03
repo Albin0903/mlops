@@ -19,6 +19,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+from app.services.provider_registry import get_supported_providers  # noqa: E402
 from scripts.pedantix.cache import get_cached_results, init_db, save_results_to_cache  # noqa: E402
 from scripts.pedantix.client_pedantix import (  # noqa: E402
     BASE_URL,
@@ -519,20 +520,7 @@ async def solve_pedantix(
         print("info: ÉCHEC : Aucun candidat n'a résolu la page.")
 
 
-PROVIDER_CHOICES = [
-    "gemini",
-    "groq",
-    "instant",
-    "medium",
-    "gpt",
-    "ollama",
-    "ollama-medium",
-    "ollama-small",
-    "ollama-mini",
-    "gemma4-e2b",
-    "gemma4-e4b",
-    "gemma4-26b",
-]
+PROVIDER_CHOICES = list(get_supported_providers())
 
 
 def parse_args() -> argparse.Namespace:
@@ -540,7 +528,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", default="classic", choices=["classic", "agent"])
     parser.add_argument(
         "--provider",
-        default="groq",
+        default="gemma4b",
         choices=PROVIDER_CHOICES,
     )
     parser.add_argument(

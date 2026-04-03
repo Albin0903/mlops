@@ -18,7 +18,7 @@ class ExecuteAgentCallUseCase:
         system_message: str = "",
         messages: list[dict[str, str]] | None = None,
         tools: list[dict[str, object]] | None = None,
-        provider: str = "groq",
+        provider: str = "gemma4b",
         thinking: str | bool | None = None,
     ) -> dict[str, object]:
         provider_selection = self._resolve_provider_use_case.execute(provider)

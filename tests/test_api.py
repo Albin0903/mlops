@@ -109,4 +109,4 @@ async def test_analyze_default_values(client, mock_groq_api_key, mock_streaming_
         execute_arg = mock_use_case.execute.call_args.args[0]
         assert execute_arg.mode.value == "doc"
         assert execute_arg.language == "python"
-        assert execute_arg.provider == "groq"
+        assert execute_arg.provider == "gemma4b"

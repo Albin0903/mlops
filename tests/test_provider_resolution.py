@@ -23,6 +23,16 @@ def test_registry_provider_resolver_gateway_resolves_ollama_alias():
     assert selection.model == "qwen3.5:2b"
 
 
+def test_registry_provider_resolver_gateway_resolves_gemma4b_alias():
+    gateway = RegistryProviderResolverGateway()
+
+    selection = gateway.resolve("Gemma4B")
+
+    assert selection.alias == "gemma4-e4b"
+    assert selection.provider == "ollama"
+    assert selection.model == "gemma4:e4b"
+
+
 def test_registry_provider_resolver_gateway_falls_back_to_alias_as_model():
     gateway = RegistryProviderResolverGateway()
 
